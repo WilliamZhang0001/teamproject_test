@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+SQLAlchemy>=2.0
+mysql-connector-python
+pydantic>=2
+pydantic-settings
+python-jose
+passlib[bcrypt]
+email-validator
+pydantic_settings
+PyJWT

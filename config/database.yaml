@@ -1,0 +1,36 @@
+# Database Configuration
+database:
+  # PostgreSQL Primary Database
+  postgresql:
+    host: localhost
+    port: 5432
+    database: doe_assist
+    username: doe_user
+    password: ${DB_PASSWORD}
+    pool_size: 10
+    max_overflow: 20
+    
+  # MongoDB Document Storage
+  mongodb:
+    host: localhost
+    port: 27017
+    database: doe_assist_docs
+    username: doe_user
+    password: ${MONGO_PASSWORD}
+    
+  # Redis Cache
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    password: ${REDIS_PASSWORD}
+
+# Development Environment Configuration
+development:
+  debug: true
+  auto_reload: true
+  
+# Production Environment Configuration  
+production:
+  debug: false
+  auto_reload: false
