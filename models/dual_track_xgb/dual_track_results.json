@@ -1,0 +1,215 @@
+{
+  "xylanase": {
+    "protein": "xylanase",
+    "property": "stability",
+    "recommendations": {
+      "iqr": {
+        "pH": {
+          "min": 5.0,
+          "max": 7.5,
+          "median": 6.25,
+          "n_samples": 50,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        },
+        "temperature_c": {
+          "min": 28.0,
+          "max": 75.0,
+          "median": 55.0,
+          "n_samples": 93,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        },
+        "concentration_mg_ml": {
+          "min": 6.21,
+          "max": 614.25,
+          "median": 294.5,
+          "n_samples": 72,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        }
+      },
+      "ml": {},
+      "consensus": {
+        "pH": {
+          "min": 5.0,
+          "max": 7.5,
+          "median": 6.25,
+          "n_samples": 50,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        },
+        "temperature_c": {
+          "min": 28.0,
+          "max": 75.0,
+          "median": 55.0,
+          "n_samples": 93,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        },
+        "concentration_mg_ml": {
+          "min": 6.21,
+          "max": 614.25,
+          "median": 294.5,
+          "n_samples": 72,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        }
+      }
+    },
+    "evidence": [],
+    "metadata": {
+      "total_records": 4936,
+      "filtered_records": 154,
+      "ml_available": false
+    }
+  },
+  "cellulase": {
+    "protein": "cellulase",
+    "property": "stability",
+    "recommendations": {
+      "iqr": {
+        "pH": {
+          "min": 5.0,
+          "max": 6.5,
+          "median": 5.5,
+          "n_samples": 27,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        },
+        "temperature_c": {
+          "min": 8.5,
+          "max": 60.0,
+          "median": 45.0,
+          "n_samples": 65,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        },
+        "concentration_mg_ml": {
+          "min": 33.65,
+          "max": 838.75,
+          "median": 516.0,
+          "n_samples": 70,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        }
+      },
+      "ml": {},
+      "consensus": {
+        "pH": {
+          "min": 5.0,
+          "max": 6.5,
+          "median": 5.5,
+          "n_samples": 27,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        },
+        "temperature_c": {
+          "min": 8.5,
+          "max": 60.0,
+          "median": 45.0,
+          "n_samples": 65,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        },
+        "concentration_mg_ml": {
+          "min": 33.65,
+          "max": 838.75,
+          "median": 516.0,
+          "n_samples": 70,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        }
+      }
+    },
+    "evidence": [],
+    "metadata": {
+      "total_records": 4936,
+      "filtered_records": 133,
+      "ml_available": false
+    }
+  },
+  "albumin": {
+    "protein": "albumin",
+    "property": "stability",
+    "recommendations": {
+      "iqr": {
+        "pH": {
+          "min": 4.43,
+          "max": 7.4,
+          "median": 5.75,
+          "n_samples": 38,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        },
+        "temperature_c": {
+          "min": 25.0,
+          "max": 68.75,
+          "median": 37.0,
+          "n_samples": 30,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        },
+        "concentration_mg_ml": {
+          "min": 0.25,
+          "max": 296.75,
+          "median": 10.0,
+          "n_samples": 63,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        }
+      },
+      "ml": {},
+      "consensus": {
+        "pH": {
+          "min": 4.43,
+          "max": 7.4,
+          "median": 5.75,
+          "n_samples": 38,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        },
+        "temperature_c": {
+          "min": 25.0,
+          "max": 68.75,
+          "median": 37.0,
+          "n_samples": 30,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        },
+        "concentration_mg_ml": {
+          "min": 0.25,
+          "max": 296.75,
+          "median": 10.0,
+          "n_samples": 63,
+          "source_count": 0,
+          "confidence": 1.0,
+          "method": "iqr"
+        }
+      }
+    },
+    "evidence": [],
+    "metadata": {
+      "total_records": 4936,
+      "filtered_records": 125,
+      "ml_available": false
+    }
+  }
+}

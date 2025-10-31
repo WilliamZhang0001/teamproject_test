@@ -1,0 +1,140 @@
+{
+  "global": {
+    "pH": {
+      "min": 4.0,
+      "max": 7.4,
+      "median": 5.7,
+      "n_samples": 952,
+      "source_count": 0
+    },
+    "temperature_c": {
+      "min": 13.0,
+      "max": 70.0,
+      "median": 37.0,
+      "n_samples": 1506,
+      "source_count": 0
+    },
+    "concentration_mg_ml": {
+      "min": 0.5,
+      "max": 500.0,
+      "median": 40.0,
+      "n_samples": 2588,
+      "source_count": 0
+    }
+  },
+  "xylanase": {
+    "pH": {
+      "min": 5.0,
+      "max": 7.5,
+      "median": 6.25,
+      "n_samples": 50,
+      "source_count": 0
+    },
+    "temperature_c": {
+      "min": 28.0,
+      "max": 75.0,
+      "median": 55.0,
+      "n_samples": 93,
+      "source_count": 0
+    },
+    "concentration_mg_ml": {
+      "min": 6.2075000000000005,
+      "max": 614.25,
+      "median": 294.5,
+      "n_samples": 72,
+      "source_count": 0
+    }
+  },
+  "cellulase": {
+    "pH": {
+      "min": 5.0,
+      "max": 6.5,
+      "median": 5.5,
+      "n_samples": 27,
+      "source_count": 0
+    },
+    "temperature_c": {
+      "min": 8.5,
+      "max": 60.0,
+      "median": 45.0,
+      "n_samples": 65,
+      "source_count": 0
+    },
+    "concentration_mg_ml": {
+      "min": 33.6525,
+      "max": 838.75,
+      "median": 516.0,
+      "n_samples": 70,
+      "source_count": 0
+    }
+  },
+  "albumin": {
+    "pH": {
+      "min": 4.425000000000001,
+      "max": 7.4,
+      "median": 5.75,
+      "n_samples": 38,
+      "source_count": 0
+    },
+    "temperature_c": {
+      "min": 25.0,
+      "max": 68.75,
+      "median": 37.0,
+      "n_samples": 30,
+      "source_count": 0
+    },
+    "concentration_mg_ml": {
+      "min": 0.24795,
+      "max": 296.75,
+      "median": 10.0,
+      "n_samples": 63,
+      "source_count": 0
+    }
+  },
+  "lysozyme": {
+    "pH": {
+      "min": 3.0,
+      "max": 7.0,
+      "median": 4.5,
+      "n_samples": 45,
+      "source_count": 0
+    },
+    "temperature_c": {
+      "min": 21.25,
+      "max": 75.0,
+      "median": 47.5,
+      "n_samples": 38,
+      "source_count": 0
+    },
+    "concentration_mg_ml": {
+      "min": 5.0,
+      "max": 645.0,
+      "median": 200.0,
+      "n_samples": 55,
+      "source_count": 0
+    }
+  },
+  "curdlan": {
+    "pH": {
+      "min": 5.25,
+      "max": 7.0,
+      "median": 6.0,
+      "n_samples": 15,
+      "source_count": 0
+    },
+    "temperature_c": {
+      "min": 26.25,
+      "max": 80.0,
+      "median": 50.0,
+      "n_samples": 38,
+      "source_count": 0
+    },
+    "concentration_mg_ml": {
+      "min": 0.345,
+      "max": 100.0,
+      "median": 25.0,
+      "n_samples": 67,
+      "source_count": 0
+    }
+  }
+}

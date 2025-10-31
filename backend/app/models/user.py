@@ -1,8 +1,11 @@
 from datetime import datetime
-from typing import Optional
-from sqlalchemy.orm import Mapped, mapped_column
+from typing import Optional, TYPE_CHECKING
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Boolean, DateTime, Integer
 from app.core.db import Base
+
+if TYPE_CHECKING:
+    from .user_experiment import UserExperimentRecord
 
 class AppUser(Base):
     __tablename__ = "app_user"
@@ -15,3 +18,8 @@ class AppUser(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     last_login_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    
+    # 关联到实验记录
+    experiment_records: Mapped[list["UserExperimentRecord"]] = relationship(
+        "UserExperimentRecord", back_populates="user", cascade="all, delete-orphan"
+    )

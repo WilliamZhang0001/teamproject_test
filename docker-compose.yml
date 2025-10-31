@@ -1,4 +1,7 @@
+version: '3.8'
+
 services:
+  # MySQL Database Service
   db:
     image: mysql:8.0
     container_name: app-mysql
@@ -7,22 +10,37 @@ services:
       MYSQL_USER: appuser
       MYSQL_PASSWORD: devpass
       MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_ROOT_HOST: '%'
     ports:
       - "53306:3306"
     volumes:
       - ./database/db/init:/docker-entrypoint-initdb.d
       - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p$${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpass"]
       interval: 5s
       timeout: 3s
       retries: 20
+      start_period: 30s
     restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
 
+  # Backend API Service
   backend:
-    build: ./backend
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: app-backend
-    env_file: ./backend/.env
+    environment:
+      - APP_ENV=dev
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=appuser
+      - DB_PASS=devpass
+      - DB_NAME=appdb
+      - JWT_SECRET=change_this_now
+      - JWT_EXPIRE_MINUTES=60
+      - PYTHONUNBUFFERED=1
     depends_on:
       db:
         condition: service_healthy
@@ -30,8 +48,37 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - ./models:/app/models
+      - ./ml_engine:/app/ml_engine
+      - ./literature_mining:/app/literature_mining
+      - ./scripts:/app/scripts
+      - backend-data:/app/data
     restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend Service (Optional - for development)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: app-frontend
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    restart: unless-stopped
+    profiles:
+      - frontend
 
 volumes:
   mysql-data:
+    driver: local
+  backend-data:
+    driver: local
 

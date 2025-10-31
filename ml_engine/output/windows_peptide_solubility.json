@@ -1,0 +1,1568 @@
+{
+  "pH": [
+    {
+      "param": "pH",
+      "lower": 7.6875,
+      "upper": 7.6875,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "pH",
+      "lower": 7.6875,
+      "upper": 7.6875,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "pH",
+      "lower": 7.6875,
+      "upper": 7.6875,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "pH",
+      "lower": 7.6875,
+      "upper": 7.6875,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "pH",
+      "lower": 7.6875,
+      "upper": 7.6875,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.125,
+      "upper": 8.125,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 8.5625,
+      "upper": 8.5625,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "pH",
+      "lower": 9.0,
+      "upper": 9.0,
+      "support": 0.000588235294117647
+    }
+  ],
+  "temperature_c": [
+    {
+      "param": "temperature_c",
+      "lower": 4.0,
+      "upper": 4.0,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "temperature_c",
+      "lower": 4.0,
+      "upper": 4.0,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 6.947368421052632,
+      "upper": 6.947368421052632,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 6.947368421052632,
+      "upper": 6.947368421052632,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "temperature_c",
+      "lower": 9.894736842105264,
+      "upper": 9.894736842105264,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 9.894736842105264,
+      "upper": 9.894736842105264,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 9.894736842105264,
+      "upper": 9.894736842105264,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "temperature_c",
+      "lower": 12.842105263157894,
+      "upper": 12.842105263157894,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 12.842105263157894,
+      "upper": 12.842105263157894,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 12.842105263157894,
+      "upper": 12.842105263157894,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 12.842105263157894,
+      "upper": 12.842105263157894,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "temperature_c",
+      "lower": 15.789473684210526,
+      "upper": 15.789473684210526,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "temperature_c",
+      "lower": 15.789473684210526,
+      "upper": 15.789473684210526,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 15.789473684210526,
+      "upper": 15.789473684210526,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 18.736842105263158,
+      "upper": 18.736842105263158,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 18.736842105263158,
+      "upper": 18.736842105263158,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 18.736842105263158,
+      "upper": 18.736842105263158,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "temperature_c",
+      "lower": 21.684210526315788,
+      "upper": 21.684210526315788,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 21.684210526315788,
+      "upper": 21.684210526315788,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 21.684210526315788,
+      "upper": 21.684210526315788,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "temperature_c",
+      "lower": 21.684210526315788,
+      "upper": 21.684210526315788,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 24.63157894736842,
+      "upper": 24.63157894736842,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 24.63157894736842,
+      "upper": 24.63157894736842,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "temperature_c",
+      "lower": 24.63157894736842,
+      "upper": 24.63157894736842,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 24.63157894736842,
+      "upper": 24.63157894736842,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 27.57894736842105,
+      "upper": 27.57894736842105,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 27.57894736842105,
+      "upper": 27.57894736842105,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 27.57894736842105,
+      "upper": 27.57894736842105,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "temperature_c",
+      "lower": 30.52631578947368,
+      "upper": 30.52631578947368,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 30.52631578947368,
+      "upper": 30.52631578947368,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 30.52631578947368,
+      "upper": 30.52631578947368,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 30.52631578947368,
+      "upper": 30.52631578947368,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 33.473684210526315,
+      "upper": 33.473684210526315,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 33.473684210526315,
+      "upper": 33.473684210526315,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "temperature_c",
+      "lower": 33.473684210526315,
+      "upper": 33.473684210526315,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 36.421052631578945,
+      "upper": 36.421052631578945,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 36.421052631578945,
+      "upper": 36.421052631578945,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 36.421052631578945,
+      "upper": 36.421052631578945,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 36.421052631578945,
+      "upper": 36.421052631578945,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 36.421052631578945,
+      "upper": 36.421052631578945,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 39.368421052631575,
+      "upper": 39.368421052631575,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "temperature_c",
+      "lower": 39.368421052631575,
+      "upper": 39.368421052631575,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "temperature_c",
+      "lower": 39.368421052631575,
+      "upper": 39.368421052631575,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 42.315789473684205,
+      "upper": 42.315789473684205,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "temperature_c",
+      "lower": 42.315789473684205,
+      "upper": 42.315789473684205,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 42.315789473684205,
+      "upper": 42.315789473684205,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 42.315789473684205,
+      "upper": 42.315789473684205,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 45.26315789473684,
+      "upper": 45.26315789473684,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 45.26315789473684,
+      "upper": 45.26315789473684,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 45.26315789473684,
+      "upper": 45.26315789473684,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 45.26315789473684,
+      "upper": 45.26315789473684,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 45.26315789473684,
+      "upper": 45.26315789473684,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 48.21052631578947,
+      "upper": 48.21052631578947,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "temperature_c",
+      "lower": 48.21052631578947,
+      "upper": 48.21052631578947,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "temperature_c",
+      "lower": 48.21052631578947,
+      "upper": 48.21052631578947,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 48.21052631578947,
+      "upper": 48.21052631578947,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 51.1578947368421,
+      "upper": 51.1578947368421,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "temperature_c",
+      "lower": 51.1578947368421,
+      "upper": 51.1578947368421,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 51.1578947368421,
+      "upper": 51.1578947368421,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 51.1578947368421,
+      "upper": 51.1578947368421,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "temperature_c",
+      "lower": 54.10526315789473,
+      "upper": 54.10526315789473,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 54.10526315789473,
+      "upper": 54.10526315789473,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 54.10526315789473,
+      "upper": 54.10526315789473,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "temperature_c",
+      "lower": 54.10526315789473,
+      "upper": 54.10526315789473,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "temperature_c",
+      "lower": 57.05263157894736,
+      "upper": 57.05263157894736,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 57.05263157894736,
+      "upper": 57.05263157894736,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 57.05263157894736,
+      "upper": 57.05263157894736,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "temperature_c",
+      "lower": 57.05263157894736,
+      "upper": 57.05263157894736,
+      "support": 0.000588235294117647
+    },
+    {
+      "param": "temperature_c",
+      "lower": 60.0,
+      "upper": 60.0,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "temperature_c",
+      "lower": 60.0,
+      "upper": 60.0,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "temperature_c",
+      "lower": 60.0,
+      "upper": 60.0,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "temperature_c",
+      "lower": 60.0,
+      "upper": 60.0,
+      "support": 0.000588235294117647
+    }
+  ],
+  "concentration_mg_ml": [
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 0.1,
+      "upper": 0.1,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.0004411764705882353
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 5.3578947368421055,
+      "upper": 5.3578947368421055,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 10.615789473684211,
+      "upper": 10.615789473684211,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 15.873684210526317,
+      "upper": 15.873684210526317,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 15.873684210526317,
+      "upper": 15.873684210526317,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 15.873684210526317,
+      "upper": 15.873684210526317,
+      "support": 0.0002941176470588235
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 15.873684210526317,
+      "upper": 15.873684210526317,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 15.873684210526317,
+      "upper": 15.873684210526317,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 15.873684210526317,
+      "upper": 15.873684210526317,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 15.873684210526317,
+      "upper": 15.873684210526317,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 15.873684210526317,
+      "upper": 15.873684210526317,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 15.873684210526317,
+      "upper": 15.873684210526317,
+      "support": 0.00014705882352941175
+    },
+    {
+      "param": "concentration_mg_ml",
+      "lower": 15.873684210526317,
+      "upper": 15.873684210526317,
+      "support": 0.00014705882352941175
+    }
+  ]
+}

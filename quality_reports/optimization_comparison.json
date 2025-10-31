@@ -1,0 +1,19 @@
+{
+  "original_stats": {
+    "total_records": 2648,
+    "avg_confidence": 0.312,
+    "with_parameters": 132,
+    "parameter_rate": 0.05
+  },
+  "current_stats": {
+    "total_records": 128,
+    "avg_confidence": 0.5390625,
+    "with_parameters": 128,
+    "parameter_rate": 1.0
+  },
+  "improvements": {
+    "data_reduction": 0.9516616314199395,
+    "confidence_improvement": 0.2270625,
+    "parameter_rate_improvement": 0.95
+  }
+}

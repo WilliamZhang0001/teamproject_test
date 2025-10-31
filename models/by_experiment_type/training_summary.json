@@ -1,0 +1,24 @@
+{
+  "total_records": 20270,
+  "valid_records": 15696,
+  "models": [
+    {
+      "experiment_type": "stability",
+      "n_samples": 13037,
+      "f1_score": 0.6494574063582005,
+      "model_file": "models\\by_experiment_type\\stability_classifier.pkl"
+    },
+    {
+      "experiment_type": "solubility",
+      "n_samples": 2030,
+      "f1_score": 0.8049660397397573,
+      "model_file": "models\\by_experiment_type\\solubility_classifier.pkl"
+    },
+    {
+      "experiment_type": "general",
+      "n_samples": 15696,
+      "f1_score": 0.6185913150341265,
+      "model_file": "models\\by_experiment_type\\general_classifier.pkl"
+    }
+  ]
+}

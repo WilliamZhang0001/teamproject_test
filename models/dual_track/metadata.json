@@ -1,0 +1,7 @@
+{
+  "timestamp": "2025-10-30T15:31:30.739563",
+  "model_type": "xgb",
+  "use_smote": false,
+  "data_file": "literature_mining/storage/structured_store.jsonl",
+  "total_records": 4936
+}

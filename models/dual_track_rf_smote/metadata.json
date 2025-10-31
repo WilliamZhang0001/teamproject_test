@@ -1,0 +1,7 @@
+{
+  "timestamp": "2025-10-30T15:12:58.987156",
+  "model_type": "rf",
+  "use_smote": true,
+  "data_file": "literature_mining/storage/structured_store.jsonl",
+  "total_records": 4936
+}

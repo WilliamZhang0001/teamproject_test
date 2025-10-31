@@ -1,63 +1,230 @@
-# Backend Module - DoE-Assist
+# Backend Module - DoE-Assist API
+
+## Overview
+
+The backend module provides RESTful APIs for the DoE-Assist system, handling user authentication, experiment predictions, literature search, and data persistence.
 
 ## Responsibilities
+
 - User Authentication and Permission Management
-- Business Logic Processing
+- Experiment Prediction (Classification and Parameter Recommendation)
+- Literature Search and Retrieval
 - Data Processing and Validation
 - Database Interaction
-- Communication with Machine Learning Engine (planned)
+- Integration with Machine Learning Engine
 
 ## Tech Stack
-- Python 3.11
-- FastAPI
-- SQLAlchemy
-- Pydantic
-- Passlib (Password Hashing)
-- JWT (Authentication Tokens)
-- Celery (Planned for Asynchronous Tasks)
+
+- **Python 3.11**
+- **FastAPI** - Modern, fast web framework
+- **SQLAlchemy 2.0+** - ORM for database operations
+- **Pydantic 2.0+** - Data validation and settings
+- **PyJWT** - JWT token authentication
+- **bcrypt** - Password hashing
+- **PyMySQL** - MySQL database connector
+- **Uvicorn** - ASGI server
 
 ## Project Structure
+
 ```
 backend/
 ├── app/
-│ ├── core/ # Core Config, DB Connection, Security
-│ ├── models/ # SQLAlchemy ORM Models
-│ ├── repos/ # Database Access Layer
-│ ├── routers/ # API Routes
-│ ├── schemas/ # Pydantic Schemas
-│ ├── services/ # Business Logic
-│ ├── main.py # FastAPI App Entrypoint
-│ └── _init_.py
-├── Dockerfile # Backend Service Dockerfile
-├── requirements.txt # Python Dependencies
-└── tests/ # Backend Tests
+│   ├── core/           # Core configuration, DB connection, security
+│   │   ├── config.py   # Application settings
+│   │   ├── db.py       # Database connection and session management
+│   │   ├── security.py # Password hashing and JWT tokens
+│   │   └── dependencies.py # Shared dependencies (get_db)
+│   ├── models/         # SQLAlchemy ORM models
+│   │   ├── user.py     # User model
+│   │   ├── auth.py     # Authentication audit model
+│   │   ├── literature.py # Literature and extraction models
+│   │   └── user_experiment.py # User experiment record model
+│   ├── repos/          # Database access layer
+│   │   ├── user_repo.py
+│   │   ├── auth_repo.py
+│   │   ├── literature_repo.py
+│   │   └── user_experiment_repo.py
+│   ├── routers/        # API routes
+│   │   ├── auth.py     # Authentication endpoints
+│   │   ├── users.py    # User management endpoints
+│   │   ├── literature.py # Literature search endpoints
+│   │   └── experiments.py # Experiment prediction endpoints
+│   ├── schemas/        # Pydantic schemas
+│   │   ├── auth.py     # Auth request/response models
+│   │   └── user.py     # User request/response models
+│   ├── services/       # Business logic
+│   │   ├── auth_service.py
+│   │   ├── literature_service.py
+│   │   └── experiment_service.py
+│   └── main.py         # FastAPI application entry point
+├── Dockerfile          # Backend service Dockerfile
+├── requirements.txt    # Python dependencies
+└── README.md          # This file
 ```
 
-## Main API Endpoints (Sprint 1)
-- `GET /health` - Health Check
-- `POST /users` - Create User (Registration)
-- `POST /auth/login` - User Login
+## API Endpoints
 
-## Planned API Endpoints (Sprint 2+)
-- `GET /experiments` - Get Experiment List
-- `POST /experiments` - Create New Experiment
-- `GET /predictions` - Get Parameter Predictions
-- `POST /feedback` - Submit Feedback
+### Health Check
+- `GET /` - Root endpoint
+- `GET /health` - Health check endpoint
 
-## Startup Commands (Local Dev)
+### Authentication
+- `POST /auth/login` - User login, returns JWT token
 
-# Install dependencies
+### User Management
+- `POST /users` - Create new user (registration)
+
+### Literature
+- `POST /literature/load` - Load literature data from JSONL file to database
+- `GET /literature/search` - Search similar literature based on parameters
+- `POST /literature/enhance-prediction` - Enhance ML prediction with literature evidence
+- `GET /literature/top-confidence` - Get high-confidence literature records
+
+### Experiment Prediction
+- `POST /api/v1/experiments/predict-classification` - Predict if experimental conditions are good/bad
+- `POST /api/v1/experiments/predict-parameter` - Predict values for specified parameters
+- `GET /api/v1/experiments/history` - Get user's prediction history
+- `GET /api/v1/experiments/{experiment_id}` - Get specific experiment record
+
+## Environment Variables
+
+Create a `.env` file in the `backend/` directory:
+
+```env
+APP_ENV=dev
+DB_HOST=db
+DB_PORT=3306
+DB_USER=appuser
+DB_PASS=devpass
+DB_NAME=appdb
+JWT_SECRET=your-secret-key-here
+JWT_EXPIRE_MINUTES=60
+```
+
+## Installation
+
+### Local Development
+
+1. **Install dependencies:**
+```bash
+cd backend
 pip install -r requirements.txt
+```
 
-# Run FastAPI app
+2. **Set up environment variables:**
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+3. **Run the application:**
+```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-## Startup with Docker
+### Docker Deployment
 
-# At project root
-docker compose up -d --build
-
-# Access API docs
-http://localhost:8000/docs
+The backend is configured to run with Docker Compose:
 
 ```bash
+# From project root
+docker compose up -d --build
+```
+
+## API Documentation
+
+Once the server is running, access the interactive API documentation:
+
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+## Database Connection
+
+The backend connects to MySQL database using SQLAlchemy. Connection settings are configured in:
+- `app/core/config.py` - Settings class
+- Environment variables via `.env` file
+
+## Features
+
+### 1. User Authentication
+- User registration with email and password
+- JWT-based authentication
+- Password hashing using bcrypt
+- Login audit logging
+
+### 2. Experiment Prediction
+- **Classification**: Predict if experimental conditions are "Good" or "Bad"
+  - Input: Biomolecule type, name, experiment type, 8 optional parameters
+  - Output: Prediction result, confidence, top 3 similar literature
+  
+- **Parameter Prediction**: Predict values for one or more parameters
+  - Input: Experimental conditions and parameters to predict
+  - Output: Recommended values, ranges, confidence, top 3 similar literature
+
+### 3. Literature Search
+- Similarity-based search using weighted Euclidean distance
+- Top K most similar literature records
+- Confidence-based filtering
+- Integration with experiment predictions
+
+### 4. Data Persistence
+- All prediction requests are saved to database
+- User-specific experiment history
+- Literature metadata and extraction records
+
+## Development
+
+### Code Structure
+
+- **Models** (`app/models/`): SQLAlchemy ORM models
+- **Repositories** (`app/repos/`): Database access layer
+- **Services** (`app/services/`): Business logic layer
+- **Routers** (`app/routers/`): API endpoint handlers
+- **Schemas** (`app/schemas/`): Pydantic validation models
+
+### Adding New Endpoints
+
+1. Define Pydantic schemas in `app/schemas/`
+2. Create repository functions in `app/repos/`
+3. Implement business logic in `app/services/`
+4. Add routes in `app/routers/`
+5. Register router in `app/main.py`
+
+### Testing
+
+Run tests (if available):
+```bash
+pytest tests/
+```
+
+## Troubleshooting
+
+### Database Connection Issues
+- Verify MySQL is running and accessible
+- Check environment variables in `.env`
+- Ensure database exists: `appdb`
+- Check network connectivity between containers
+
+### ML Model Loading Issues
+- Verify model files exist in `models/` directory
+- Check volume mounts in `docker-compose.yml`
+- Ensure ML engine dependencies are installed
+
+### Port Conflicts
+- Default port is 8000
+- Change in `docker-compose.yml` or use `--port` flag with uvicorn
+
+## Dependencies
+
+Key dependencies are listed in `requirements.txt`:
+- `fastapi` - Web framework
+- `uvicorn[standard]` - ASGI server
+- `SQLAlchemy>=2.0` - ORM
+- `pydantic>=2` - Data validation
+- `PyJWT` - JWT tokens
+- `bcrypt>=4.1` - Password hashing
+- `pymysql>=1.1` - MySQL connector
+
+## License
+
+Part of DoE-Assist project

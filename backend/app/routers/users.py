@@ -1,19 +1,13 @@
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, Header
 from sqlalchemy.orm import Session
-from app.core.db import SessionLocal
-from app.core.security import hash_password
+from app.core.dependencies import get_db
+from app.core.security import hash_password, verify_token
 from app.schemas.user import UserCreate, UserOut, UserUpdate
 from app.models.user import AppUser
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("", response_model=UserOut, status_code=201)
 def create_user(payload: UserCreate, db: Session = Depends(get_db)):
@@ -35,6 +29,26 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
     db.refresh(user)
     return user
 
+@router.get("/me", response_model=UserOut)
+def get_current_user(authorization: str = Header(None), db: Session = Depends(get_db)):
+    """Get current user information"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authorization header required")
+    
+    token = authorization.split(" ")[1]
+    try:
+        payload = verify_token(token)
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        user = db.get(AppUser, int(user_id))
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        return UserOut.model_validate(user)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 @router.get("/{user_id}", response_model=UserOut)
 def get_user(user_id: int, db: Session = Depends(get_db)):
