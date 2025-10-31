@@ -1,9 +1,14 @@
 """
 Experiment Prediction API Routes
 """
-from fastapi import APIRouter, Depends, HTTPException, Header
-from sqlalchemy.orm import Session
+import csv
+import json
+from io import StringIO
 from typing import List, Dict, Any, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File, Form
+from fastapi.responses import StreamingResponse
+from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from app.core.dependencies import get_db
 from app.services.experiment_service import ExperimentService
@@ -15,6 +20,21 @@ project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 router = APIRouter(prefix="/api/v1/experiments", tags=["experiments"])
+
+
+DEFAULT_COLUMN_MAPPING = {
+    'biomolecule_type': 'Substance Category',
+    'biomolecule_name': 'Substance Name',
+    'experiment_type': 'Experiment Type',
+    'pH': 'pH',
+    'temperature_c': 'Temperature',
+    'concentration_mg_ml': 'Concentration',
+    'ionic_strength_mM': 'Ion Concentration',
+    'time_min': 'Time',
+    'additive': 'Additives',
+    'shear_rate_s1': 'Shear Rate',
+    'pressure_bar': 'Pressure'
+}
 
 
 def get_ml_predictor():
@@ -186,6 +206,170 @@ async def predict_parameter(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+
+
+@router.post("/predict-csv")
+async def predict_from_csv(
+    file: UploadFile = File(..., description="CSV file containing experiment definitions"),
+    prediction_type: str = Form(
+        "classification",
+        description="Type of prediction to run: classification or parameter"
+    ),
+    top_k: int = Form(3, description="Number of literature records to return"),
+    column_mapping: Optional[str] = Form(
+        None,
+        description="JSON mapping from experiment fields to CSV column names"
+    ),
+    predict_parameters: Optional[str] = Form(
+        None,
+        description="JSON list of parameters to predict when prediction_type=parameter"
+    ),
+    db: Session = Depends(get_db),
+    predictor = Depends(get_ml_predictor),
+    user_id: Optional[int] = Depends(get_user_id_from_header)
+):
+    """Run batch experiment predictions from an uploaded CSV file."""
+
+    if prediction_type not in {"classification", "parameter"}:
+        raise HTTPException(
+            status_code=400,
+            detail="prediction_type must be either 'classification' or 'parameter'"
+        )
+
+    try:
+        mapping = DEFAULT_COLUMN_MAPPING.copy()
+        if column_mapping:
+            try:
+                mapping.update(json.loads(column_mapping))
+            except json.JSONDecodeError as exc:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid column_mapping JSON: {exc}"
+                ) from exc
+
+        parameter_list: Optional[List[str]] = None
+        if predict_parameters:
+            try:
+                parsed_params = json.loads(predict_parameters)
+            except json.JSONDecodeError as exc:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid predict_parameters JSON: {exc}"
+                ) from exc
+
+            if not isinstance(parsed_params, list):
+                raise HTTPException(
+                    status_code=400,
+                    detail="predict_parameters must be a JSON list"
+                )
+            parameter_list = parsed_params
+
+        if prediction_type == "parameter" and not parameter_list:
+            raise HTTPException(
+                status_code=400,
+                detail="predict_parameters is required when prediction_type is 'parameter'"
+            )
+
+        raw_content = await file.read()
+        try:
+            decoded_content = raw_content.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            decoded_content = raw_content.decode("utf-8")
+
+        csv_reader = csv.DictReader(StringIO(decoded_content))
+        if csv_reader.fieldnames is None:
+            raise HTTPException(status_code=400, detail="CSV file must contain a header row")
+
+        service = ExperimentService(db, ml_predictor=predictor)
+
+        numeric_fields = {
+            'pH', 'temperature_c', 'concentration_mg_ml',
+            'ionic_strength_mM', 'time_min', 'shear_rate_s1', 'pressure_bar'
+        }
+
+        output_buffer = StringIO()
+        output_fieldnames = list(csv_reader.fieldnames)
+        for extra_field in ["Result Value", "Confidence Level", "Related Literature"]:
+            if extra_field not in output_fieldnames:
+                output_fieldnames.append(extra_field)
+        csv_writer = csv.DictWriter(output_buffer, fieldnames=output_fieldnames)
+        csv_writer.writeheader()
+
+        for row in csv_reader:
+            if not any(value.strip() for value in row.values() if isinstance(value, str)):
+                # Skip completely empty rows
+                continue
+
+            user_input: Dict[str, Any] = {}
+            for field, column_name in mapping.items():
+                if column_name in row and row[column_name] not in (None, ""):
+                    value = row[column_name]
+                    if field in numeric_fields:
+                        try:
+                            user_input[field] = float(value)
+                        except (TypeError, ValueError):
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Invalid numeric value '{value}' for column '{column_name}'"
+                            )
+                    else:
+                        user_input[field] = value
+
+            # Provide defaults for required fields if missing
+            if 'biomolecule_type' not in user_input:
+                raise HTTPException(
+                    status_code=400,
+                    detail="CSV data missing biomolecule_type information"
+                )
+            if 'biomolecule_name' not in user_input:
+                raise HTTPException(
+                    status_code=400,
+                    detail="CSV data missing biomolecule_name information"
+                )
+            user_input.setdefault('experiment_type', 'stability')
+
+            if prediction_type == "classification":
+                prediction = service.predict_classification(
+                    user_input=user_input,
+                    user_id=user_id,
+                    top_k=top_k
+                )
+                result_value = prediction.get('prediction')
+                confidence_value = prediction.get('confidence')
+                literature_value = json.dumps(prediction.get('similar_literature', []), ensure_ascii=False)
+            else:
+                prediction = service.predict_parameter(
+                    user_input=user_input,
+                    request_params=parameter_list or [],
+                    user_id=user_id,
+                    top_k=top_k
+                )
+                result_value = json.dumps(prediction.get('predicted_parameters', {}), ensure_ascii=False)
+                confidence_value = prediction.get('confidence')
+                literature_value = json.dumps(prediction.get('similar_literature', []), ensure_ascii=False)
+
+            row_copy = dict(row)
+            row_copy["Result Value"] = result_value
+            row_copy["Confidence Level"] = confidence_value
+            row_copy["Related Literature"] = literature_value
+            csv_writer.writerow(row_copy)
+
+        output_buffer.seek(0)
+        filename = file.filename or "predictions.csv"
+        return StreamingResponse(
+            iter([output_buffer.getvalue()]),
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f"attachment; filename=predictions_{filename}"
+            }
+        )
+
+    except HTTPException:
+        raise
+    except csv.Error as exc:
+        raise HTTPException(status_code=400, detail=f"Failed to read CSV file: {exc}") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"CSV prediction failed: {exc}") from exc
 
 
 @router.get("/history")
