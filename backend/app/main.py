@@ -4,6 +4,7 @@ Main FastAPI application for DoE-Assist backend
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import auth, users, literature, experiments
+from .api import jobs_router, predict_router
 from .core.db import init_db
 import uvicorn
 
@@ -39,6 +40,8 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(literature.router)
 app.include_router(experiments.router)
+app.include_router(predict_router)
+app.include_router(jobs_router)
 
 if __name__ == "__main__":
     uvicorn.run(
