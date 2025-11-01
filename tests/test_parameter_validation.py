@@ -36,6 +36,22 @@ def test_valid_payload_passes_validation(validator):
     assert result.provided_optional_fields == ["pH"]
 
 
+def test_numeric_strings_are_coerced(validator):
+    payload = {
+        "biomolecule_name": " lysozyme ",
+        "biomolecule_type": "protein",
+        "property": "stability",
+        "pH": "7.0",
+    }
+
+    result = validator.validate(payload)
+
+    assert result.is_valid
+    assert result.normalized_payload["pH"] == pytest.approx(7.0)
+    # Whitespace should be stripped from required string fields
+    assert result.normalized_payload["biomolecule_name"] == "lysozyme"
+
+
 def test_missing_required_field_raises(validator):
     payload = {
         "biomolecule_type": "protein",
@@ -64,6 +80,21 @@ def test_optional_range_enforced(validator):
     error = exc_info.value.to_dict()["errors"][0]
     assert error["field"] == "pH"
     assert error["code"] == "below_minimum"
+
+
+def test_optional_upper_bound_enforced(validator):
+    payload = {
+        "biomolecule_name": "lysozyme",
+        "biomolecule_type": "protein",
+        "property": "stability",
+        "temperature_c": 151,
+    }
+
+    with pytest.raises(ParameterValidationError) as exc_info:
+        validator.validate(payload)
+
+    error_map = {err["field"]: err for err in exc_info.value.to_dict()["errors"]}
+    assert error_map["temperature_c"]["code"] == "above_maximum"
 
 
 def test_at_least_one_optional_required(validator):
