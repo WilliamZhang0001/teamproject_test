@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from .config import settings
 
@@ -304,6 +304,19 @@ class ParameterValidator:
                 )
                 continue
 
+            coerced, error = self._coerce_value(name, constraint, value)
+            if error:
+                errors.append(error)
+                continue
+
+            normalized[name] = coerced
+            value = coerced
+
+            if name == "property":
+                normalized["experiment_type"] = coerced
+            elif name == "experiment_type":
+                normalized["property"] = coerced
+
             if constraint.enum_values and value not in constraint.enum_values:
                 errors.append(
                     ParameterError(
@@ -316,38 +329,27 @@ class ParameterValidator:
                 )
 
             if constraint.min_length is not None or constraint.max_length is not None:
-                length = len(value) if isinstance(value, str) else None
-                if length is None:
+                length = len(value)
+                if constraint.min_length is not None and length < constraint.min_length:
                     errors.append(
                         ParameterError(
                             field=name,
-                            code="invalid_type",
-                            message="Value must be a string",
-                            expected={"type": "string"},
-                            actual=value,
+                            code="too_short",
+                            message="Value is shorter than allowed",
+                            expected={"min_length": constraint.min_length},
+                            actual=length,
                         )
                     )
-                else:
-                    if constraint.min_length is not None and length < constraint.min_length:
-                        errors.append(
-                            ParameterError(
-                                field=name,
-                                code="too_short",
-                                message="Value is shorter than allowed",
-                                expected={"min_length": constraint.min_length},
-                                actual=length,
-                            )
+                if constraint.max_length is not None and length > constraint.max_length:
+                    errors.append(
+                        ParameterError(
+                            field=name,
+                            code="too_long",
+                            message="Value is longer than allowed",
+                            expected={"max_length": constraint.max_length},
+                            actual=length,
                         )
-                    if constraint.max_length is not None and length > constraint.max_length:
-                        errors.append(
-                            ParameterError(
-                                field=name,
-                                code="too_long",
-                                message="Value is longer than allowed",
-                                expected={"max_length": constraint.max_length},
-                                actual=length,
-                            )
-                        )
+                    )
 
         provided_optional: List[str] = []
         for name, constraint in spec.optional_fields.items():
@@ -356,6 +358,14 @@ class ParameterValidator:
                 continue
 
             provided_optional.append(name)
+
+            coerced, error = self._coerce_value(name, constraint, value)
+            if error:
+                errors.append(error)
+                continue
+
+            normalized[name] = coerced
+            value = coerced
 
             if constraint.enum_values and value not in constraint.enum_values:
                 errors.append(
@@ -368,26 +378,15 @@ class ParameterValidator:
                     )
                 )
 
-            if isinstance(value, (int, float)):
-                numeric_value = float(value)
-            else:
-                try:
-                    numeric_value = float(value)
-                except (TypeError, ValueError):
-                    numeric_value = None
-
             if constraint.min_value is not None or constraint.max_value is not None:
+                numeric_value = float(value) if isinstance(value, (int, float)) else None
                 if numeric_value is None:
-                    errors.append(
-                        ParameterError(
-                            field=name,
-                            code="invalid_type",
-                            message="Value must be numeric",
-                            expected={"type": "number"},
-                            actual=value,
-                        )
-                    )
-                else:
+                    try:
+                        numeric_value = float(value)
+                    except (TypeError, ValueError):
+                        numeric_value = None
+
+                if numeric_value is not None:
                     if constraint.min_value is not None and numeric_value < constraint.min_value:
                         errors.append(
                             ParameterError(
@@ -408,6 +407,7 @@ class ParameterValidator:
                                 actual=numeric_value,
                             )
                         )
+
 
         if require_optional is None:
             require_optional = settings.parameter_validation_require_optional
@@ -441,6 +441,66 @@ class ParameterValidator:
             len(errors),
         )
         raise ParameterValidationError(errors, context=context)
+
+    @staticmethod
+    def _coerce_value(
+        field_name: str,
+        constraint: FieldConstraint,
+        value: Any,
+    ) -> Tuple[Any, Optional[ParameterError]]:
+        """Coerce the raw value to the expected Python type if possible."""
+
+        raw_type = constraint.field_type or ""
+        field_type = raw_type.strip().strip("`").lower()
+
+        if field_type in {"float", "double", "number", "numeric"}:
+            if isinstance(value, (int, float)):
+                return float(value), None
+            if isinstance(value, str):
+                try:
+                    return float(value.strip()), None
+                except (TypeError, ValueError):
+                    pass
+            return None, ParameterError(
+                field=field_name,
+                code="invalid_type",
+                message="Value must be numeric",
+                expected={"type": "number"},
+                actual=value,
+            )
+
+        if field_type in {"int", "integer"}:
+            if isinstance(value, int) and not isinstance(value, bool):
+                return value, None
+            if isinstance(value, (float, str)):
+                try:
+                    coerced = int(float(value))
+                except (TypeError, ValueError):
+                    pass
+                else:
+                    if str(coerced) == str(value).strip() or float(value) == coerced:
+                        return coerced, None
+            return None, ParameterError(
+                field=field_name,
+                code="invalid_type",
+                message="Value must be an integer",
+                expected={"type": "integer"},
+                actual=value,
+            )
+
+        if field_type in {"string", "text"}:
+            if isinstance(value, str):
+                return value.strip(), None
+            return None, ParameterError(
+                field=field_name,
+                code="invalid_type",
+                message="Value must be a string",
+                expected={"type": "string"},
+                actual=value,
+            )
+
+        # Default: return value unchanged
+        return value, None
 
 
 @lru_cache(maxsize=1)
