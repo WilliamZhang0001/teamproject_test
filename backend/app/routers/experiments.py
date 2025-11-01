@@ -9,8 +9,13 @@ from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, AliasChoices
+from app.core.config import settings
 from app.core.dependencies import get_db
+from app.core.parameter_spec import (
+    get_parameter_validator,
+    ParameterValidationError,
+)
 from app.services.experiment_service import ExperimentService
 import sys
 from pathlib import Path
@@ -25,6 +30,7 @@ router = APIRouter(prefix="/api/v1/experiments", tags=["experiments"])
 DEFAULT_COLUMN_MAPPING = {
     'biomolecule_type': 'Substance Category',
     'biomolecule_name': 'Substance Name',
+    'property': 'Property',
     'experiment_type': 'Experiment Type',
     'pH': 'pH',
     'temperature_c': 'Temperature',
@@ -35,6 +41,15 @@ DEFAULT_COLUMN_MAPPING = {
     'shear_rate_s1': 'Shear Rate',
     'pressure_bar': 'Pressure'
 }
+
+
+def _build_validation_error_detail(exc: ParameterValidationError) -> Dict[str, Any]:
+    detail = exc.to_dict()
+    detail.update({
+        "status": "error",
+        "message": detail.get("message", "Parameter validation failed"),
+    })
+    return detail
 
 
 def get_ml_predictor():
@@ -56,24 +71,28 @@ class ExperimentInput(BaseModel):
     """Experiment input model"""
     biomolecule_type: str = Field(..., description="Biomolecule type: protein, peptide, polysaccharide")
     biomolecule_name: str = Field(..., description="Biomolecule name, e.g. lysozyme")
-    experiment_type: str = Field(default="stability", description="Experiment type: stability, solubility, aggregation")
-    
+    property: str = Field(
+        ...,
+        description="Experiment property: stability, solubility, aggregation",
+        validation_alias=AliasChoices('property', 'experiment_type'),
+    )
+
     # Optional 8 parameters
-    pH: Optional[float] = Field(None, ge=0, le=14, description="pH value (0-14)")
-    temperature_c: Optional[float] = Field(None, ge=-50, le=200, description="Temperature (°C)")
-    concentration_mg_ml: Optional[float] = Field(None, gt=0, description="Concentration (mg/mL)")
-    ionic_strength_mM: Optional[float] = Field(None, ge=0, description="Ionic strength (mM)")
+    pH: Optional[float] = Field(None, description="pH value")
+    temperature_c: Optional[float] = Field(None, description="Temperature (°C)")
+    concentration_mg_ml: Optional[float] = Field(None, description="Concentration (mg/mL)")
+    ionic_strength_mM: Optional[float] = Field(None, description="Ionic strength (mM)")
     additive: Optional[str] = Field(None, description="Additive")
-    time_min: Optional[float] = Field(None, ge=0, description="Time (minutes)")
-    shear_rate_s1: Optional[float] = Field(None, ge=0, description="Shear rate (s⁻¹)")
-    pressure_bar: Optional[float] = Field(None, ge=0, description="Pressure (bar)")
-    
+    time_min: Optional[float] = Field(None, description="Time (minutes)")
+    shear_rate_s1: Optional[float] = Field(None, description="Shear rate (s⁻¹)")
+    pressure_bar: Optional[float] = Field(None, description="Pressure (bar)")
+
     class Config:
         json_schema_extra = {
             "example": {
                 "biomolecule_type": "protein",
                 "biomolecule_name": "lysozyme",
-                "experiment_type": "stability",
+                "property": "stability",
                 "pH": 7.0,
                 "temperature_c": 25.0,
                 "concentration_mg_ml": 10.0,
@@ -92,17 +111,18 @@ class ParameterPredictionRequest(BaseModel):
     predict_parameters: List[str] = Field(
         ...,
         description="List of parameters to predict. Valid values: pH, temperature_c, concentration_mg_ml, ionic_strength_mM, additive, time_min, shear_rate_s1, pressure_bar",
-        min_items=1
+        min_items=1,
+        validation_alias=AliasChoices('predict_parameters', 'recommend_parameters'),
     )
     top_k: int = Field(default=3, ge=1, le=10, description="Number of most similar literature records to return")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
                 "input": {
                     "biomolecule_type": "protein",
                     "biomolecule_name": "lysozyme",
-                    "experiment_type": "stability",
+                    "property": "stability",
                     "pH": 7.0,
                     "temperature_c": 25.0,
                     "concentration_mg_ml": 10.0
@@ -138,10 +158,21 @@ async def predict_classification(
     try:
         # Convert input format
         user_input = experiment.model_dump()
-        
+
+        if settings.parameter_validation_enabled:
+            validator = get_parameter_validator()
+            try:
+                validation = validator.validate(
+                    user_input,
+                    context="predict-classification",
+                )
+                user_input = validation.normalized_payload
+            except ParameterValidationError as exc:
+                raise HTTPException(status_code=422, detail=_build_validation_error_detail(exc)) from exc
+
         # Create service instance
         service = ExperimentService(db, ml_predictor=predictor)
-        
+
         # Execute prediction
         result = service.predict_classification(
             user_input=user_input,
@@ -171,25 +202,43 @@ async def predict_parameter(
     System returns predicted values, confidence, and related literature.
     """
     try:
-        # Validate prediction parameters
-        valid_params = [
-            'pH', 'temperature_c', 'concentration_mg_ml', 'ionic_strength_mM',
-            'additive', 'time_min', 'shear_rate_s1', 'pressure_bar'
-        ]
-        
+        # Convert input format
+        user_input = request.input.model_dump()
+
+        validator = get_parameter_validator()
+        valid_params = validator.optional_field_names()
+
         for param in request.predict_parameters:
             if param not in valid_params:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Invalid parameter: {param}. Valid values: {valid_params}"
+                    detail={
+                        "status": "error",
+                        "message": f"Invalid parameter: {param}",
+                        "errors": [
+                            {
+                                "field": "predict_parameters",
+                                "code": "invalid_choice",
+                                "message": f"Parameter '{param}' is not supported",
+                                "expected": {"allowed": valid_params},
+                            }
+                        ],
+                    },
                 )
-        
-        # Convert input format
-        user_input = request.input.model_dump()
-        
+
+        if settings.parameter_validation_enabled:
+            try:
+                validation = validator.validate(
+                    user_input,
+                    context="predict-parameter",
+                )
+                user_input = validation.normalized_payload
+            except ParameterValidationError as exc:
+                raise HTTPException(status_code=422, detail=_build_validation_error_detail(exc)) from exc
+
         # Create service instance
         service = ExperimentService(db, ml_predictor=predictor)
-        
+
         # Execute prediction
         result = service.predict_parameter(
             user_input=user_input,
@@ -295,6 +344,8 @@ async def predict_from_csv(
         csv_writer = csv.DictWriter(output_buffer, fieldnames=output_fieldnames)
         csv_writer.writeheader()
 
+        validator = get_parameter_validator()
+
         for row in csv_reader:
             if not any(value.strip() for value in row.values() if isinstance(value, str)):
                 # Skip completely empty rows
@@ -326,7 +377,19 @@ async def predict_from_csv(
                     status_code=400,
                     detail="CSV data missing biomolecule_name information"
                 )
-            user_input.setdefault('experiment_type', 'stability')
+            if 'property' not in user_input and 'experiment_type' in user_input:
+                user_input['property'] = user_input['experiment_type']
+            user_input.setdefault('property', 'stability')
+
+            if settings.parameter_validation_enabled:
+                try:
+                    validation = validator.validate(
+                        user_input,
+                        context="predict-csv",
+                    )
+                    user_input = validation.normalized_payload
+                except ParameterValidationError as exc:
+                    raise HTTPException(status_code=422, detail=_build_validation_error_detail(exc)) from exc
 
             if prediction_type == "classification":
                 prediction = service.predict_classification(

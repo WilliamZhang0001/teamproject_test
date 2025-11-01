@@ -64,10 +64,12 @@ class ExperimentService:
         similar_literature = self._search_similar_literature(user_input, top_k)
         
         # 3. Build complete result
+        property_value = user_input.get('property') or user_input.get('experiment_type', 'stability')
         result = {
             'biomolecule_type': user_input.get('biomolecule_type'),
             'biomolecule_name': user_input.get('biomolecule_name'),
-            'experiment_type': user_input.get('experiment_type', 'stability'),
+            'property': property_value,
+            'experiment_type': property_value,
             'prediction': 'Good' if ml_result.get('is_stable') else 'Bad',
             'confidence': ml_result.get('confidence', 0.0),
             'input_parameters': self._extract_input_params(user_input),
@@ -107,10 +109,12 @@ class ExperimentService:
         similar_literature = self._search_similar_literature(user_input, top_k)
         
         # 3. Build complete result
+        property_value = user_input.get('property') or user_input.get('experiment_type', 'stability')
         result = {
             'biomolecule_type': user_input.get('biomolecule_type'),
             'biomolecule_name': user_input.get('biomolecule_name'),
-            'experiment_type': user_input.get('experiment_type', 'stability'),
+            'property': property_value,
+            'experiment_type': property_value,
             'input_parameters': self._extract_input_params(user_input),
             'predicted_parameters': ml_result.get('predicted_parameters', {}),
             'confidence': ml_result.get('confidence', 0.0),
@@ -253,8 +257,8 @@ class ExperimentService:
             
             # Search similar records
             biomolecule_name = user_input.get('biomolecule_name')
-            experiment_type = user_input.get('experiment_type', 'stability')
-            
+            experiment_type = user_input.get('property') or user_input.get('experiment_type', 'stability')
+
             similar_records = literature_repo.search_similar_records(
                 self.db,
                 target_params=target_params,
@@ -295,7 +299,7 @@ class ExperimentService:
                 'user_id': user_id,
                 'biomolecule_type': user_input.get('biomolecule_type'),
                 'biomolecule_name': user_input.get('biomolecule_name'),
-                'experiment_type': user_input.get('experiment_type', 'stability'),
+                'experiment_type': user_input.get('property') or user_input.get('experiment_type', 'stability'),
                 'input_pH': user_input.get('pH'),
                 'input_temperature_c': user_input.get('temperature_c'),
                 'input_concentration_mg_ml': user_input.get('concentration_mg_ml'),
