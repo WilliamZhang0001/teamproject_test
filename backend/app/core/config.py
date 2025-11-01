@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     jwt_secret: str = "change_this_now"
     jwt_expire_minutes: int = 60
     password_scheme: str = "bcrypt"
+    parameter_spec_path: str = "参数输入规范.md"
+    parameter_validation_enabled: bool = True
+    parameter_validation_require_optional: bool = True
+    parameter_validation_optional_min_count: int = 1
 
     @property
     def sql_url(self) -> str:
