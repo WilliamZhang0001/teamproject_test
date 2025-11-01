@@ -148,3 +148,71 @@ Returns job status.
 `POST /api/v1/upload` accepts a JSON body with `filename` and base64 encoded `content`. Files are
 persisted locally and the API returns `{ "file_id": "...", "filename": "..." }`. Until object
 storage is integrated, clients should continue sending JSON payloads directly to `/api/v1/predict`.
+
+## 4. Frontend Input → API Gateway → Core Model → Unified Output
+
+The platform implements a deterministic pipeline from user interaction in the frontend to the
+unified response returned by the prediction endpoints. Each hop preserves the contracts documented
+above while delegating responsibility to focused components.
+
+### Stage 1 – Frontend Input Normalisation
+
+* Frontend forms serialise their payloads exactly as shown in the Scenario 1/2 examples. Optional
+  numeric fields may be omitted or sent as `null`; boolean flags such as additive usage are
+  expressed through the presence of strings (e.g. any additive name implies `has_additive = 1`).
+* The parameter specification loaded by `app.core.parameter_spec.ParameterSpecLoader` defines
+  required/optional fields, numeric bounds and enumerations. When the request reaches the gateway,
+  `_validation_payload` merges `known_parameters` into the body before running
+  `validator.validate(...)`, ensuring that frontend-provided fields are canonicalised and enriched
+  with derived values (e.g. converted units, trimmed strings) prior to model execution.
+
+### Stage 2 – API Gateway Enforcement
+
+* `/api/v1/predict` and `/api/v1/jobs` are implemented in `backend/app/api/v1_predict.py` and
+  `backend/app/api/v1_jobs.py`. Both endpoints call `_require_auth` (JWT verification) and
+  `_enforce_rate_limit` to gate access before any downstream work begins. Per-request metadata such
+  as user id, token id and client IP compose the keys used by the in-memory `RateLimiter`.
+* The gateway replays cached responses when an `Idempotency-Key` header is present, protecting the
+  model layer from duplicate submissions. Errors with status `< 500` are also cached, enabling the
+  frontend to surface deterministic validation feedback during retries.
+* Once guardrails pass, the gateway feeds the normalised payload into `ModelOrchestrator.execute`.
+  Success and failure paths are auditable through structured logging (`_audit_log`) and Prometheus
+  metrics exposed by the orchestrator (`ml_prediction_latency_seconds`,
+  `ml_model_selection_total`, `ml_model_degradation_total`, `ml_iqr_hit_level_total`).
+
+### Stage 3 – Core Model Orchestration
+
+* `ModelOrchestrator` (in `backend/app/services/model_orchestrator.py`) inspects the payload to
+  branch between the stability prediction flow and the IQR recommendation flow. The same
+  orchestrator instance is reused by synchronous calls and asynchronous jobs to guarantee identical
+  business logic regardless of invocation mode.
+* Prediction scenario:
+  * Features are prepared by the `prepare_features` helper in the model adapter module, aligning
+    runtime payloads with the training pipeline (feature ordering, missing-value flags, additive
+    encoding).
+  * `ModelPredictorAdapter` attempts to load LightGBM, then XGBoost, then RandomForest model bundles
+    from `models/`. If all serialised artefacts are unavailable the adapter falls back to a heuristic
+    `_FallbackModel`, ensuring the gateway never returns `model_unavailable` unless every candidate
+    fails to load.
+  * Latency and model selection statistics are recorded, and degradation events (when the best model
+    is not LightGBM) increment `ml_model_degradation_total`.
+* Recommendation scenario:
+  * `IqrRepository.get_recommendations` resolves statistics from `models/iqr_statistics.json` using
+    the documented priority order (`experiment+biomolecule` → `experiment` → `biomolecule` →
+    `global`). Each parameter yields a payload matching the Scenario 2 response contract.
+  * Hit provenance is surfaced via `source` strings and mirrored in the `ml_iqr_hit_level_total`
+    metric for observability.
+
+### Stage 4 – Unified Output Assembly
+
+* For predictions, the orchestrator enriches the raw adapter output with rounded probabilities and a
+  natural-language recommendation computed by `_build_recommendation`, producing the unified JSON
+  structure consumed by the frontend result panels.
+* For recommendations, the orchestrator returns a dictionary keyed by each requested parameter. The
+  frontend can iterate this map without branching because every entry follows the same schema
+  (`recommended_value`, `safe_range`, `full_range`, `sample_count`, `source`). Missing statistics are
+  represented as `null`, signalling the UI to fall back to manual input guidance.
+* Asynchronous jobs surface identical payloads under `result_json` once `status = SUCCEEDED`, so
+  long-running workflows share the same rendering components as direct responses. Failures bubble up
+  through `error_code` or job `error` fields, preserving the error-handling patterns described in the
+  Error responses table.
