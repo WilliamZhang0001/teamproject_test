@@ -18,8 +18,13 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { login, mockLogin } = useAuth();
   const navigate = useNavigate();
+
+  const handleDevLogin = () => {
+    mockLogin();
+    navigate('/dashboard');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +100,17 @@ const LoginPage: React.FC = () => {
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
+            
+            {/* Dev mode quick login - Hidden */}
+            {/* <Button
+              fullWidth
+              variant="outlined"
+              color="secondary"
+              sx={{ mb: 2 }}
+              onClick={handleDevLogin}
+            >
+              Dev Mode Login (No Backend Required)
+            </Button> */}
             
             <Box textAlign="center">
               <Link component={RouterLink} to="/register" variant="body2">

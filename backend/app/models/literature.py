@@ -5,8 +5,8 @@
 from datetime import datetime
 from typing import Optional
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Float, Integer, Text, DateTime, JSON
-from app.core.db import Base
+from sqlalchemy import String, Float, Integer, Text, DateTime, JSON, ForeignKey
+from backend.app.core.db import Base
 
 
 class Literature(Base):
@@ -34,7 +34,12 @@ class ExtractionRecord(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     
     # 文献关联
-    literature_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
+    literature_id: Mapped[Optional[int]] = mapped_column(
+        Integer, 
+        ForeignKey("literature.id"), 
+        nullable=True, 
+        index=True
+    )
     
     # 生物分子信息
     biomolecule_type: Mapped[str] = mapped_column(String(64), nullable=False, default="protein", index=True)
@@ -100,4 +105,5 @@ class ExtractionRecord(Base):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'full_data': self.full_data
         }
+
 

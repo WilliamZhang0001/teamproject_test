@@ -4,9 +4,9 @@ Literature API Routes
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
-from app.core.dependencies import get_db
-from app.services.literature_service import LiteratureService
-from app.repos import literature_repo
+from backend.app.core.dependencies import get_db
+from backend.app.services.literature_service import LiteratureService
+from backend.app.repos import literature_repo
 
 router = APIRouter(prefix="/literature", tags=["literature"])
 
@@ -38,6 +38,10 @@ async def search_similar_literature(
     temperature_c: float = None,
     concentration_mg_ml: float = None,
     ionic_strength_mM: float = None,
+    additive: str = None,
+    time_min: float = None,
+    shear_rate_s1: float = None,
+    pressure_bar: float = None,
     limit: int = 3,
     db: Session = Depends(get_db)
 ):
@@ -51,6 +55,10 @@ async def search_similar_literature(
         temperature_c: Temperature
         concentration_mg_ml: Concentration
         ionic_strength_mM: Ionic strength
+        additive: Additive name
+        time_min: Time in minutes
+        shear_rate_s1: Shear rate
+        pressure_bar: Pressure in bar
         limit: Number of results to return
     """
     target_params = {}
@@ -63,6 +71,14 @@ async def search_similar_literature(
         target_params['concentration_mg_ml'] = concentration_mg_ml
     if ionic_strength_mM is not None:
         target_params['ionic_strength_mM'] = ionic_strength_mM
+    if additive is not None and additive != '':
+        target_params['additive'] = additive
+    if time_min is not None:
+        target_params['time_min'] = time_min
+    if shear_rate_s1 is not None:
+        target_params['shear_rate_s1'] = shear_rate_s1
+    if pressure_bar is not None:
+        target_params['pressure_bar'] = pressure_bar
     
     try:
         similar_records = literature_repo.search_similar_records(

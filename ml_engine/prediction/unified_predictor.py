@@ -132,10 +132,11 @@ class UnifiedPredictor:
         features = self._prepare_features(user_input, feature_cols)
         
         # 填充缺失值
-        X = pd.DataFrame([features])
+        # 确保特征顺序与模型训练时一致
+        X = pd.DataFrame([features])[feature_cols]
         X_filled = pd.DataFrame(
             imputer.transform(X),
-            columns=X.columns
+            columns=feature_cols
         )
         
         # 预测
@@ -315,6 +316,15 @@ class UnifiedPredictor:
         
         # 添加剂特征
         features['has_additive'] = 1 if user_input.get('additive') else 0
+        
+        # 确保所有 feature_cols 中的特征都存在，缺失的用 0 或 np.nan 填充
+        for col in feature_cols:
+            if col not in features:
+                # 如果是数值特征，用 NaN；如果是缺失指示器或其他，用 0
+                if col.endswith('_missing') or col == 'has_additive' or 'encoded' in col:
+                    features[col] = 0
+                else:
+                    features[col] = np.nan
         
         return features
     

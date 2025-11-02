@@ -115,12 +115,12 @@ backend/
 
 ## Environment Variables
 
-Create a `.env` file in the `backend/` directory:
+When using Docker Compose, environment variables are configured in `docker-compose.yml` at the project root. For local development, create a `.env` file in the `backend/` directory:
 
 ```env
 APP_ENV=dev
-DB_HOST=db
-DB_PORT=3306
+DB_HOST=localhost  # Use 'db' when running in Docker Compose
+DB_PORT=3306       # Use 53306 for external MySQL connection
 DB_USER=appuser
 DB_PASS=devpass
 DB_NAME=appdb
@@ -131,13 +131,36 @@ PARAMETER_VALIDATION_ENABLED=true
 PARAMETER_VALIDATION_OPTIONAL_MIN_COUNT=1
 ```
 
+### Key Variables
+
+- `DB_HOST` - Database host (use `db` when running in Docker Compose, `localhost` for external MySQL)
+- `DB_PORT` - Database port (3306 for internal Docker, 53306 for external connection)
+- `JWT_SECRET` - Secret key for JWT token generation (change in production!)
 - `PARAMETER_SPEC_PATH` - Relative/absolute path to the Markdown specification defining required/optional experiment fields.
 - `PARAMETER_VALIDATION_ENABLED` - Toggle runtime validation (set `false` to bypass during local debugging).
 - `PARAMETER_VALIDATION_OPTIONAL_MIN_COUNT` - Minimum optional parameters enforced when validation is enabled.
 
-## Installation
+## Quick Start
 
-### Local Development
+### Using Docker Compose (Recommended)
+
+The easiest way to start the backend along with the entire system:
+
+```bash
+# From project root directory
+docker compose up -d --build
+```
+
+This will automatically start:
+- MySQL database (port 53306)
+- Backend API service (port 8000)
+- Frontend service (port 3000)
+
+The backend will be available at http://localhost:8000
+
+### Local Development (Without Docker)
+
+If you prefer to run the backend locally:
 
 1. **Install dependencies:**
 ```bash
@@ -147,22 +170,15 @@ pip install -r requirements.txt
 
 2. **Set up environment variables:**
 ```bash
-cp .env.example .env
-# Edit .env with your configuration
+# Create .env file with your configuration
+# See Environment Variables section below
 ```
 
-3. **Run the application:**
+3. **Ensure MySQL is running** (either via Docker Compose or standalone MySQL)
+
+4. **Run the application:**
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### Docker Deployment
-
-The backend is configured to run with Docker Compose:
-
-```bash
-# From project root
-docker compose up -d --build
 ```
 
 ## API Documentation
@@ -251,11 +267,16 @@ pytest tests/
 ### ML Model Loading Issues
 - Verify model files exist in `models/` directory
 - Check volume mounts in `docker-compose.yml`
-- Ensure ML engine dependencies are installed
+- Ensure ML engine dependencies are installed (pandas, numpy, scikit-learn, xgboost, lightgbm)
 
 ### Port Conflicts
 - Default port is 8000
 - Change in `docker-compose.yml` or use `--port` flag with uvicorn
+
+### Docker Compose Issues
+- Ensure all services are running: `docker compose ps`
+- Check logs: `docker compose logs backend`
+- Rebuild if needed: `docker compose up -d --build`
 
 ## Dependencies
 

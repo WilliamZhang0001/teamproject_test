@@ -23,8 +23,8 @@ except ModuleNotFoundError:  # pragma: no cover - fallback for environments with
 
     Counter = Histogram = _NoopMetric
 
-from app.adapters import ModelNotAvailableError, ModelPredictorAdapter
-from app.services.iqr_repo import IqrRepository
+from backend.app.adapters import ModelNotAvailableError, ModelPredictorAdapter
+from backend.app.services.iqr_repo import IqrRepository
 
 logger = logging.getLogger(__name__)
 

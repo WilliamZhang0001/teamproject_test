@@ -15,6 +15,7 @@ interface AuthContextType {
   logout: () => void;
   loading: boolean;
   updateUser: () => Promise<void>;
+  mockLogin: () => void; // Mock login for development mode
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,6 +49,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(user));
     } catch (error) {
       console.error('Failed to verify user token:', error);
+      // Check if it's a mock token, if so don't log out
+      const token = localStorage.getItem('token');
+      if (token && token.startsWith('dev-mock-token-')) {
+        console.log('Dev mode: Using mock token, skipping verification');
+        return;
+      }
       logout();
     } finally {
       setLoading(false);
@@ -132,13 +139,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Mock login for development mode - bypass backend
+  const mockLogin = () => {
+    const mockUser: User = {
+      id: '1',
+      name: 'DevUser',
+      email: 'dev@example.com',
+      role: 'user'
+    };
+    
+    // Set mock token
+    const mockToken = 'dev-mock-token-' + Date.now();
+    
+    localStorage.setItem('token', mockToken);
+    localStorage.setItem('user', JSON.stringify(mockUser));
+    setUser(mockUser);
+    console.log('✅ Dev mode login successful! User:', mockUser);
+  };
+
   const value: AuthContextType = {
     user,
     login,
     register,
     logout,
     loading,
-    updateUser
+    updateUser,
+    mockLogin
   };
 
   return (

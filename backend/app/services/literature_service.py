@@ -10,7 +10,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from app.repos import literature_repo
+from backend.app.repos import literature_repo
+from backend.app.models.literature import Literature
 from literature_mining.storage.structured_store import StructuredStore
 
 
@@ -39,22 +40,92 @@ class LiteratureService:
         for record_data in all_records:
             try:
                 # Process literature metadata
-                doi = record_data.get('source_doi')
+                # Try multiple possible fields for DOI and title
+                doi = (record_data.get('source_doi') or 
+                       record_data.get('doi') or 
+                       None)
+                
+                title = (record_data.get('title') or 
+                        record_data.get('source_title') or 
+                        record_data.get('paper_title') or
+                        None)
+                
+                authors = (record_data.get('authors') or 
+                          record_data.get('source_authors') or 
+                          record_data.get('paper_authors') or
+                          None)
+                
+                pub_year = (record_data.get('pub_year') or 
+                           record_data.get('publication_year') or 
+                           record_data.get('year') or
+                           record_data.get('paper_year') or
+                           None)
+                
+                source = record_data.get('source')
+                
                 literature_id = None
                 
-                if doi:
-                    # Find or create literature record
-                    literature = literature_repo.get_literature_by_doi(self.db, doi)
-                    if not literature:
-                        literature = literature_repo.create_literature(
-                            self.db,
-                            doi=doi,
-                            title=None,  # May not exist in JSONL
-                            authors=None,
-                            pub_year=None,
-                            source=None
-                        )
-                    literature_id = literature.id
+                # Create literature record if we have DOI OR title
+                # Even without DOI, we can store title information for reference
+                if doi or title:
+                    if doi:
+                        # Find or create literature record by DOI
+                        literature = literature_repo.get_literature_by_doi(self.db, doi)
+                        if not literature:
+                            literature = literature_repo.create_literature(
+                                self.db,
+                                doi=doi,
+                                title=title,
+                                authors=authors,
+                                pub_year=pub_year,
+                                source=source
+                            )
+                        else:
+                            # Update literature metadata if we have new information
+                            updated = False
+                            if not literature.title and title:
+                                literature.title = title
+                                updated = True
+                            if not literature.authors and authors:
+                                literature.authors = authors
+                                updated = True
+                            if not literature.pub_year and pub_year:
+                                literature.pub_year = pub_year
+                                updated = True
+                            if updated:
+                                self.db.commit()
+                                self.db.refresh(literature)
+                        literature_id = literature.id
+                    elif title:
+                        # Even without DOI, create a literature record with title
+                        # This helps us track literature information even when DOI is missing
+                        existing_lit = self.db.query(Literature).filter(
+                            Literature.title == title
+                        ).first()
+                        
+                        if not existing_lit:
+                            literature = literature_repo.create_literature(
+                                self.db,
+                                doi=None,
+                                title=title,
+                                authors=authors,
+                                pub_year=pub_year,
+                                source=source
+                            )
+                            literature_id = literature.id
+                        else:
+                            # Update if we have new info
+                            updated = False
+                            if not existing_lit.authors and authors:
+                                existing_lit.authors = authors
+                                updated = True
+                            if not existing_lit.pub_year and pub_year:
+                                existing_lit.pub_year = pub_year
+                                updated = True
+                            if updated:
+                                self.db.commit()
+                                self.db.refresh(existing_lit)
+                            literature_id = existing_lit.id
                 
                 # Create extraction record
                 literature_repo.create_extraction_record(self.db, record_data, literature_id)

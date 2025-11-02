@@ -4,7 +4,7 @@
 -- 用户实验预测表
 CREATE TABLE IF NOT EXISTS user_experiment_records (
   id INT PRIMARY KEY AUTO_INCREMENT,
-  user_id INT,
+  user_id BIGINT,
   
   -- 基本信息
   biomolecule_type VARCHAR(64) NOT NULL,

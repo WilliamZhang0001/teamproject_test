@@ -13,3 +13,11 @@ pymysql>=1.1
 python-dotenv>=1.0   
 bcrypt>=4.1
 cryptography
+python-multipart
+
+# ML Engine dependencies
+pandas>=1.5.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+xgboost>=3.0.0
+lightgbm>=4.0.0

@@ -1,10 +1,11 @@
 """
 Literature Database Access Layer
 """
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select, func, or_, and_
 from typing import List, Optional, Dict, Any
-from app.models.literature import Literature, ExtractionRecord
+from backend.app.models.literature import Literature, ExtractionRecord
+from collections import Counter
 
 
 def create_literature(db: Session, **kwargs) -> Literature:
@@ -89,8 +90,10 @@ def search_similar_records(
     Returns:
         List of most similar records (including similarity scores)
     """
-    # Build query
-    query = select(ExtractionRecord).where(
+    # Build query with eager loading of literature relationship
+    query = select(ExtractionRecord).options(
+        joinedload(ExtractionRecord.literature)
+    ).where(
         ExtractionRecord.property == property_type
     )
     
@@ -104,7 +107,7 @@ def search_similar_records(
         )
     
     # Get all candidate records
-    candidates = list(db.scalars(query).all())
+    candidates = list(db.scalars(query).unique().all())
     
     if not candidates:
         return []
@@ -116,14 +119,40 @@ def search_similar_records(
         if similarity_score > 0:  # Only return records with similarity
             record_dict = record.to_dict()
             record_dict['similarity_score'] = similarity_score
-            # Add literature information
+            # Add literature information - only from real sources, no auto-generation
+            literature_info = None
+            
+            # First, try from relationship
             if record.literature:
-                record_dict['literature'] = {
+                literature_info = {
                     'doi': record.literature.doi,
                     'title': record.literature.title,
                     'authors': record.literature.authors,
                     'pub_year': record.literature.pub_year
                 }
+            # If no literature relationship, try to extract from full_data
+            elif record.full_data:
+                full_data = record.full_data if isinstance(record.full_data, dict) else {}
+                # Extract from various possible fields (same place as raw_context would be)
+                title = full_data.get('title') or full_data.get('source_title') or full_data.get('paper_title')
+                authors = full_data.get('authors') or full_data.get('source_authors') or full_data.get('paper_authors')
+                pub_year = full_data.get('pub_year') or full_data.get('publication_year') or full_data.get('year') or full_data.get('paper_year')
+                doi = full_data.get('source_doi') or full_data.get('doi') or full_data.get('paper_doi')
+                
+                # Only create literature info if we have at least title (real data requirement)
+                # Title is the most important, similar to how raw_context is required
+                if title:
+                    literature_info = {
+                        'doi': doi,
+                        'title': title,
+                        'authors': authors,
+                        'pub_year': pub_year
+                    }
+            
+            # Only add literature info if we found real title data
+            if literature_info and literature_info.get('title'):
+                record_dict['literature'] = literature_info
+            
             scored_records.append(record_dict)
     
     # Sort by similarity and return Top K
@@ -197,9 +226,12 @@ def calculate_similarity(target_params: Dict[str, Any], record: ExtractionRecord
                 weighted_distance += weight  # 不匹配
             total_weight += weight
     
-    # 如果有任何匹配的参数
+    # 如果没有提供任何匹配的参数，返回基于置信度的基础相似度
+    # 这样可以支持仅通过生物分子名称搜索的情况
     if total_weight == 0:
-        return 0.0
+        # 返回一个基础相似度，基于记录的置信度
+        # 当没有参数比较时，至少返回置信度作为相似度
+        return record.confidence * 0.5  # 50%的置信度作为基础分数
     
     # 计算相似度分数 (1 - 归一化距离)
     similarity = 1.0 - (weighted_distance / total_weight)
@@ -210,6 +242,53 @@ def calculate_similarity(target_params: Dict[str, Any], record: ExtractionRecord
     return max(0.0, similarity)
 
 
+def get_most_common_additives(
+    db: Session,
+    biomolecule_name: Optional[str] = None,
+    property_type: str = 'stability',
+    limit: int = 5
+) -> Optional[Dict[str, Any]]:
+    """Get most common additive value for a biomolecule
+    
+    Returns:
+        Dict with 'recommended_value' (most common additive), 'common_values' (list of top additives), 
+        'count' (total occurrences), or None if no additives found
+    """
+    query = select(ExtractionRecord).where(
+        ExtractionRecord.property == property_type,
+        ExtractionRecord.additive.isnot(None),
+        ExtractionRecord.additive != ''
+    )
+    
+    if biomolecule_name:
+        query = query.where(
+            or_(
+                ExtractionRecord.protein_name == biomolecule_name,
+                ExtractionRecord.protein_name.like(f"%{biomolecule_name}%")
+            )
+        )
+    
+    records = list(db.scalars(query).all())
+    
+    if not records:
+        return None
+    
+    # Count additive occurrences
+    additive_counts = Counter([r.additive for r in records if r.additive])
+    if not additive_counts:
+        return None
+    
+    most_common = additive_counts.most_common(limit)
+    
+    return {
+        'recommended_value': most_common[0][0],  # Most common additive
+        'common_values': [item[0] for item in most_common],  # Top additives
+        'count': len(records),
+        'top_count': most_common[0][1] if most_common else 0,
+        'source': 'database_statistics'
+    }
+
+
 def get_top_records_by_confidence(
     db: Session,
     biomolecule_name: Optional[str] = None,
@@ -217,7 +296,9 @@ def get_top_records_by_confidence(
     limit: int = 3
 ) -> List[Dict[str, Any]]:
     """Get high-confidence records"""
-    query = select(ExtractionRecord).where(
+    query = select(ExtractionRecord).options(
+        joinedload(ExtractionRecord.literature)
+    ).where(
         ExtractionRecord.property == property_type
     )
     
@@ -231,18 +312,45 @@ def get_top_records_by_confidence(
     
     query = query.order_by(ExtractionRecord.confidence.desc())
     
-    records = list(db.scalars(query.limit(limit)).all())
+    records = list(db.scalars(query.limit(limit)).unique().all())
     
     result = []
     for record in records:
         record_dict = record.to_dict()
+        
+        # Add literature information - only from real sources, no auto-generation
+        literature_info = None
+        
+        # First, try from relationship
         if record.literature:
-            record_dict['literature'] = {
+            literature_info = {
                 'doi': record.literature.doi,
                 'title': record.literature.title,
                 'authors': record.literature.authors,
                 'pub_year': record.literature.pub_year
             }
+        # If no literature relationship, try to extract from full_data
+        elif record.full_data:
+            full_data = record.full_data if isinstance(record.full_data, dict) else {}
+            # Extract from various possible fields (same place as raw_context would be)
+            title = full_data.get('title') or full_data.get('source_title') or full_data.get('paper_title')
+            authors = full_data.get('authors') or full_data.get('source_authors') or full_data.get('paper_authors')
+            pub_year = full_data.get('pub_year') or full_data.get('publication_year') or full_data.get('year') or full_data.get('paper_year')
+            doi = full_data.get('source_doi') or full_data.get('doi') or full_data.get('paper_doi')
+            
+            # Only create literature info if we have at least title (real data requirement)
+            if title:
+                literature_info = {
+                    'doi': doi,
+                    'title': title,
+                    'authors': authors,
+                    'pub_year': pub_year
+                }
+        
+        # Only add literature info if we found real title data
+        if literature_info and literature_info.get('title'):
+            record_dict['literature'] = literature_info
+        
         result.append(record_dict)
     
     return result

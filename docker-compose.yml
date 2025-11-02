@@ -41,30 +41,28 @@ services:
       - JWT_SECRET=change_this_now
       - JWT_EXPIRE_MINUTES=60
       - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
     depends_on:
       db:
         condition: service_healthy
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
-      - ./models:/app/models
-      - ./ml_engine:/app/ml_engine
-      - ./literature_mining:/app/literature_mining
-      - ./scripts:/app/scripts
+      - .:/app
       - backend-data:/app/data
     restart: unless-stopped
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 
-  # Frontend Service (Optional - for development)
+  # Frontend Service
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: app-frontend
     environment:
       - REACT_APP_API_URL=http://localhost:8000
       - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
     depends_on:
       - backend
     ports:
@@ -73,8 +71,6 @@ services:
       - ./frontend:/app
       - /app/node_modules
     restart: unless-stopped
-    profiles:
-      - frontend
 
 volumes:
   mysql-data:

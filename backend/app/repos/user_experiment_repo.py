@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from typing import List, Dict, Any, Optional
 import json
-from app.models.user_experiment import UserExperimentRecord
+from backend.app.models.user_experiment import UserExperimentRecord
 
 
 def create_experiment_record(db: Session, record_data: Dict[str, Any]) -> UserExperimentRecord:

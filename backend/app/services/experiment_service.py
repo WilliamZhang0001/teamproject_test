@@ -10,7 +10,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from app.repos import literature_repo, user_experiment_repo
+from backend.app.repos import literature_repo, user_experiment_repo
 
 
 class ExperimentService:
@@ -79,7 +79,10 @@ class ExperimentService:
         
         # 4. Save to database (if user_id is provided)
         if user_id is not None:
+            print(f"DEBUG: Saving classification record for user_id={user_id}")
             self._save_experiment_record(user_id, user_input, result, 'classification')
+        else:
+            print("DEBUG: user_id is None, skipping record save")
         
         return result
     
@@ -124,7 +127,10 @@ class ExperimentService:
         
         # 4. Save to database (if user_id is provided)
         if user_id is not None:
+            print(f"DEBUG: Saving parameter prediction record for user_id={user_id}")
             self._save_experiment_record(user_id, user_input, result, 'parameter_prediction')
+        else:
+            print("DEBUG: user_id is None, skipping record save")
         
         return result
     
@@ -206,6 +212,26 @@ class ExperimentService:
                             'max': param_info.get('q3'),
                             'confidence': param_info.get('count', 0)
                         }
+            
+            # Handle additive parameter (string type, not in IQR stats)
+            if 'additive' in request_params and 'additive' not in predicted_parameters:
+                biomolecule_name = user_input.get('biomolecule_name')
+                experiment_type = user_input.get('experiment_type') or user_input.get('property', 'stability')
+                additive_info = literature_repo.get_most_common_additives(
+                    self.db,
+                    biomolecule_name=biomolecule_name,
+                    property_type=experiment_type,
+                    limit=5
+                )
+                if additive_info:
+                    predicted_parameters['additive'] = {
+                        'recommended_value': additive_info['recommended_value'],
+                        'common_values': additive_info.get('common_values', []),
+                        'count': additive_info.get('count', 0),
+                        'top_count': additive_info.get('top_count', 0),
+                        'source': additive_info.get('source', 'database_statistics'),
+                        'is_string': True  # Mark as string type
+                    }
             
             # Calculate average confidence
             confidence = ml_result.get('confidence', 0.0)
@@ -314,7 +340,10 @@ class ExperimentService:
                 'recommended_literature': result.get('similar_literature', [])
             }
             
-            user_experiment_repo.create_experiment_record(self.db, record_data)
+            record = user_experiment_repo.create_experiment_record(self.db, record_data)
+            print(f"DEBUG: Successfully saved experiment record with id={record.id}")
         except Exception as e:
             print(f"Warning: Failed to save experiment record: {e}")
+            import traceback
+            traceback.print_exc()
 

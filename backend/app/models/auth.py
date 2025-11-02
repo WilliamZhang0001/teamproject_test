@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import String, Boolean, DateTime, Integer
-from app.core.db import Base
+from backend.app.core.db import Base
 
 class AuthLoginAudit(Base):
     __tablename__ = "auth_login_audit"

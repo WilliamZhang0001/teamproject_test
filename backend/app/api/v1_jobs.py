@@ -13,7 +13,7 @@ from fastapi import APIRouter, BackgroundTasks, Header, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.services.model_orchestrator import ModelOrchestrator
+from backend.app.services.model_orchestrator import ModelOrchestrator
 
 from .v1_predict import _enforce_rate_limit, _require_auth
 

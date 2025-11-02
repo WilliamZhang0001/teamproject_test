@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta,timezone
 import jwt
 import bcrypt
-from app.core.config import settings
+from backend.app.core.config import settings
 
 def hash_password(raw: str) -> str:
     # Use bcrypt directly to avoid passlib compatibility issues

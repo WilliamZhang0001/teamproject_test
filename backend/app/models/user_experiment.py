@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Float, Integer, Text, DateTime, ForeignKey
-from app.core.db import Base
+from backend.app.core.db import Base
 
 if TYPE_CHECKING:
     from .user import AppUser

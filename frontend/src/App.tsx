@@ -14,6 +14,7 @@ import FeedbackPage from './pages/FeedbackPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import WelcomePage from './pages/WelcomePage';
+import ResultsDisplayPage from './pages/ResultsDisplayPage';
 
 // Import components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -132,6 +133,13 @@ const AppContent: React.FC = () => {
           <ProtectedRoute>
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
               <FeedbackPage />
+            </Container>
+          </ProtectedRoute>
+        } />
+        <Route path="/results" element={
+          <ProtectedRoute>
+            <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+              <ResultsDisplayPage />
             </Container>
           </ProtectedRoute>
         } />

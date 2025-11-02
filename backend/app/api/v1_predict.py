@@ -16,9 +16,9 @@ from fastapi import APIRouter, Header, Request
 from fastapi.responses import JSONResponse
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
-from app.core.parameter_spec import ParameterValidationError, get_parameter_validator
-from app.core.security import verify_token
-from app.services.model_orchestrator import ModelNotAvailableError, ModelOrchestrator
+from backend.app.core.parameter_spec import ParameterValidationError, get_parameter_validator
+from backend.app.core.security import verify_token
+from backend.app.services.model_orchestrator import ModelNotAvailableError, ModelOrchestrator
 
 logger = logging.getLogger(__name__)
 

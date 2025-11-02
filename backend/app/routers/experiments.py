@@ -10,13 +10,13 @@ from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File,
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field, AliasChoices
-from app.core.config import settings
-from app.core.dependencies import get_db
-from app.core.parameter_spec import (
+from backend.app.core.config import settings
+from backend.app.core.dependencies import get_db
+from backend.app.core.parameter_spec import (
     get_parameter_validator,
     ParameterValidationError,
 )
-from app.services.experiment_service import ExperimentService
+from backend.app.services.experiment_service import ExperimentService
 import sys
 from pathlib import Path
 
@@ -133,12 +133,53 @@ class ParameterPredictionRequest(BaseModel):
         }
 
 
-# Helper function: Get user ID from header (simplified implementation)
-def get_user_id_from_header(authorization: Optional[str] = Header(None)) -> Optional[int]:
-    """Get user ID from authorization header"""
-    # TODO: Implement real JWT parsing logic
-    # Currently returns None for anonymous users
-    return None
+# Helper function: Get user ID from header
+def get_user_id_from_header(
+    authorization: Optional[str] = Header(None, alias="Authorization"),
+    db: Session = Depends(get_db)
+) -> Optional[int]:
+    """Get user ID from authorization header JWT token"""
+    if not authorization:
+        return None
+    
+    try:
+        # Extract token from "Bearer <token>" format
+        if not authorization.startswith("Bearer "):
+            return None
+        
+        token = authorization.replace("Bearer ", "").strip()
+        
+        # Verify and decode token
+        from backend.app.core.security import verify_token
+        
+        payload = verify_token(token)
+        sub = payload.get("sub")  # JWT subject contains user_id (as string)
+        
+        if not sub:
+            return None
+        
+        # Token stores user_id as string, convert to int
+        try:
+            user_id = int(sub)
+            print(f"DEBUG: Found user_id={user_id} from token")
+            return user_id
+        except (ValueError, TypeError):
+            # Fallback: if sub is username instead of user_id, query database
+            from backend.app.repos.user_repo import get_by_username
+            user = get_by_username(db, sub)
+            if user:
+                print(f"DEBUG: Found user_id={user.id} for username={sub}")
+                return user.id
+            else:
+                print(f"DEBUG: User not found for sub={sub}")
+        
+        return None
+    except Exception as e:
+        # If token is invalid or expired, return None (anonymous user)
+        print(f"DEBUG: Failed to get user_id from header: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 
 
 @router.post("/predict-classification")
@@ -447,7 +488,7 @@ async def get_experiment_history(
     Returns user's previous prediction requests and usage history.
     """
     try:
-        from app.repos import user_experiment_repo
+        from backend.app.repos import user_experiment_repo
         
         records = user_experiment_repo.get_user_experiments(
             db, user_id=user_id, limit=limit
@@ -471,7 +512,7 @@ async def get_experiment_by_id(
     Get experiment record details by ID
     """
     try:
-        from app.repos import user_experiment_repo
+        from backend.app.repos import user_experiment_repo
         
         record = user_experiment_repo.get_experiment_by_id(db, experiment_id)
         

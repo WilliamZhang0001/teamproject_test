@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
-from app.models.auth import AuthLoginAudit
+from backend.app.models.auth import AuthLoginAudit
 
 def add_login_audit(db: Session, *, user_id: int | None, username: str | None, ip: str | None, ok: bool):
     db.add(AuthLoginAudit(
