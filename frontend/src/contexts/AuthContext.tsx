@@ -55,7 +55,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('Dev mode: Using mock token, skipping verification');
         return;
       }
+      // Token is invalid, logout and redirect to login
       logout();
+      // Redirect to login page if not already there
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/register' && window.location.pathname !== '/') {
+        window.location.href = '/login';
+      }
     } finally {
       setLoading(false);
     }
@@ -70,15 +75,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const user = JSON.parse(storedUser);
         setUser(user);
-        // Don't verify token immediately on app load to avoid logout loops
-        // Token verification will happen when needed
+        
+        // Verify token validity in background (for real tokens, not mock tokens)
+        if (!token.startsWith('dev-mock-token-')) {
+          // Verify token by calling getCurrentUser in background
+          // Don't wait for it to complete, let it happen async
+          updateUserFromAPI().catch(() => {
+            // If verification fails, token is invalid - logout will be called by updateUserFromAPI
+            console.log('Token verification failed on app load');
+          });
+        } else {
+          // For mock tokens, just set loading to false
+          setLoading(false);
+        }
       } catch (error) {
         console.error('Error parsing stored user data:', error);
         localStorage.removeItem('user');
         localStorage.removeItem('token');
+        setLoading(false);
       }
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
+  }, []);
+
+  // Listen for auth:logout event from API interceptor
+  useEffect(() => {
+    const handleAuthLogout = () => {
+      setUser(null);
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      // Redirect to login page if not already there
+      // Note: ProtectedRoute will also handle redirect, but we do it here
+      // to ensure immediate redirect even if user is on a non-protected page
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/register' && window.location.pathname !== '/') {
+        window.location.href = '/login';
+      }
+    };
+    
+    window.addEventListener('auth:logout', handleAuthLogout);
+    return () => {
+      window.removeEventListener('auth:logout', handleAuthLogout);
+    };
   }, []);
 
   const login = async (username: string, password: string) => {

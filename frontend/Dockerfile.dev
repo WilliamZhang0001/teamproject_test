@@ -1,0 +1,20 @@
+# Development Dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies with npm ci for faster, reliable installs
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+# Start development server with optimized settings
+CMD ["npm", "run", "start:fast"]
+

@@ -185,12 +185,33 @@ class ParameterSpecLoader:
 
         for line in table_lines:
             cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-            if not cells or cells[0] in {"字段名", "Field Name"}:
+            if not cells:
+                continue
+            # Skip header rows (both English and Chinese)
+            first_cell = cells[0].lower()
+            if first_cell in {"field name", "字段名", "field"}:
+                continue
+
+            # Skip separator rows (---, ------------, etc.)
+            # Check if all non-empty cells contain only dashes/hyphens
+            if all(
+                not cell.strip() or 
+                all(c in "-—–—" for c in cell.strip()) 
+                for cell in cells
+            ):
+                continue
+
+            # Ensure we have at least 3 cells (name, type, description)
+            if len(cells) < 3:
                 continue
 
             name = self._normalize_identifier(cells[0])
-            field_type = cells[1]
-            description = cells[2]
+            # Skip if name is empty after normalization
+            if not name:
+                continue
+                
+            field_type = cells[1] if len(cells) > 1 else "string"
+            description = cells[2] if len(cells) > 2 else ""
             constraints = cells[4] if len(cells) > 4 else ""
 
             enum_values = self._extract_enum(constraints)
@@ -213,11 +234,32 @@ class ParameterSpecLoader:
 
         for line in table_lines:
             cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-            if not cells or cells[0] in {"字段名", "Field Name"}:
+            if not cells:
+                continue
+            # Skip header rows (both English and Chinese)
+            first_cell = cells[0].lower()
+            if first_cell in {"field name", "字段名", "field"}:
+                continue
+
+            # Skip separator rows (---, ------------, etc.)
+            # Check if all non-empty cells contain only dashes/hyphens
+            if all(
+                not cell.strip() or 
+                all(c in "-—–—" for c in cell.strip()) 
+                for cell in cells
+            ):
+                continue
+
+            # Ensure we have at least 3 cells (name, type, unit)
+            if len(cells) < 3:
                 continue
 
             name = self._normalize_identifier(cells[0])
-            field_type = cells[1]
+            # Skip if name is empty after normalization
+            if not name:
+                continue
+                
+            field_type = cells[1] if len(cells) > 1 else "float"
             unit = cells[2] if len(cells) > 2 else None
             value_range = cells[3] if len(cells) > 3 else ""
             description = cells[5] if len(cells) > 5 else ""
@@ -253,7 +295,9 @@ class ParameterSpecLoader:
 
     @staticmethod
     def _extract_numeric_range(text: str) -> (Optional[float], Optional[float]):
-        match = re.search(r"(-?\d+(?:\.\d+)?)\s*-\s*(-?\d+(?:\.\d+)?)", text)
+        # Support various dash/hyphen types: ASCII hyphen (-), em dash (—), en dash (–), etc.
+        # Match: number [whitespace] [dash/hyphen] [whitespace] number
+        match = re.search(r"(-?\d+(?:\.\d+)?)\s*[-\—–—]\s*(-?\d+(?:\.\d+)?)", text)
         if match:
             return float(match.group(1)), float(match.group(2))
         return None, None
@@ -281,6 +325,11 @@ class ParameterValidator:
 
         spec = self.loader.load()
         normalized = dict(payload)
+        
+        # Debug: log what fields we expect and what we received
+        LOGGER.debug(f"Validation context: {context}")
+        LOGGER.debug(f"Required fields expected: {list(spec.required_fields.keys())}")
+        LOGGER.debug(f"Payload received: {list(normalized.keys())}")
 
         # Normalise aliases for backwards compatibility.
         if "property" not in normalized and "experiment_type" in normalized:
@@ -292,12 +341,16 @@ class ParameterValidator:
 
         for name, constraint in spec.required_fields.items():
             value = normalized.get(name)
+            # Debug: log what we're checking
+            LOGGER.debug(f"Checking required field '{name}': value={value}, type={type(value)}")
+            
             if value is None or (isinstance(value, str) and not value.strip()):
+                LOGGER.warning(f"Required field '{name}' is missing or empty: value={value!r}")
                 errors.append(
                     ParameterError(
                         field=name,
                         code="missing_field",
-                        message="Required field is missing",
+                        message=f"Required field '{name}' is missing",
                         expected={"required": True},
                         actual=value,
                     )

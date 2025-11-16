@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from typing import Optional
 
 class Settings(BaseSettings):
     app_env: str = "dev"
@@ -8,9 +9,9 @@ class Settings(BaseSettings):
     db_pass: str = "devpass"
     db_name: str = "appdb"
     jwt_secret: str = "change_this_now"
-    jwt_expire_minutes: int = 60
+    jwt_expire_minutes: Optional[int] = None  # None means token never expires
     password_scheme: str = "bcrypt"
-    parameter_spec_path: str = "参数输入规范.md"
+    parameter_spec_path: str = "Parameter_Input_Specification.md"
     parameter_validation_enabled: bool = True
     parameter_validation_require_optional: bool = True
     parameter_validation_optional_min_count: int = 1

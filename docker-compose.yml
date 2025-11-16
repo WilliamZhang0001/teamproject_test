@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # MySQL Database Service
   db:
@@ -18,10 +16,10 @@ services:
       - mysql-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpass"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-      start_period: 30s
+      interval: 3s
+      timeout: 2s
+      retries: 10
+      start_period: 15s
     restart: unless-stopped
     command: --default-authentication-plugin=mysql_native_password
 
@@ -41,17 +39,19 @@ services:
       - JWT_SECRET=change_this_now
       - JWT_EXPIRE_MINUTES=60
       - PYTHONUNBUFFERED=1
-      - PYTHONPATH=/app
+      - PYTHONPATH=/workspace
+      - PARAMETER_SPEC_PATH=/workspace/Parameter_Input_Specification.md
     depends_on:
       db:
         condition: service_healthy
     ports:
       - "8000:8000"
     volumes:
-      - .:/app
+      - .:/workspace
+      - ./backend:/app
       - backend-data:/app/data
     restart: unless-stopped
-    command: uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload --log-level warning
 
   # Frontend Service
   frontend:
@@ -63,8 +63,11 @@ services:
       - REACT_APP_API_URL=http://localhost:8000
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
+      - GENERATE_SOURCEMAP=false
+      - FAST_REFRESH=true
     depends_on:
-      - backend
+      backend:
+        condition: service_started
     ports:
       - "3000:3000"
     volumes:

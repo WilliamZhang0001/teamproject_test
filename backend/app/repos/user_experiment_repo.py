@@ -56,3 +56,20 @@ def get_experiment_by_id(db: Session, experiment_id: int) -> Optional[UserExperi
     """Get experiment record by ID"""
     return db.scalar(select(UserExperimentRecord).where(UserExperimentRecord.id == experiment_id))
 
+
+def delete_user_experiments(db: Session, user_id: int) -> int:
+    """Delete all experiment records for a user
+    
+    Returns:
+        Number of deleted records
+    """
+    records = db.scalars(
+        select(UserExperimentRecord).where(UserExperimentRecord.user_id == user_id)
+    ).all()
+    
+    count = len(records)
+    for record in records:
+        db.delete(record)
+    
+    db.commit()
+    return count

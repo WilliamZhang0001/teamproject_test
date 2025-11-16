@@ -43,6 +43,9 @@ class ExtractionRecord(BaseModel):
     outcome_score: Optional numerical score (e.g., relative stability index).
     outcome_label: Optional categorical label (e.g., "stable", "aggregation").
     source_doi: Optional DOI string.
+    source_title: Optional paper title.
+    source_authors: Optional authors list.
+    source_pub_year: Optional publication year.
     source_section: Optional section hint (e.g., "Results").
     outcome_text: Raw text snippet supporting the extraction.
     confidence: Heuristic confidence score [0, 1].
@@ -57,5 +60,8 @@ class ExtractionRecord(BaseModel):
     outcome_label: Optional[str] = None
     outcome_text: Optional[str] = None
     source_doi: Optional[str] = None
+    source_title: Optional[str] = None
+    source_authors: Optional[str] = None
+    source_pub_year: Optional[str] = None
     source_section: Optional[str] = None
     confidence: float = Field(default=0.5, ge=0.0, le=1.0)

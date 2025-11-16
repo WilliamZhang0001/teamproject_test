@@ -26,6 +26,30 @@ project/
 
 ### Start the Entire System
 
+#### Method 1: Using Auto-Start Scripts (Recommended, automatically opens browser)
+
+**Windows Users:**
+- Double-click `start.bat` or run in command line:
+  ```bash
+  start.bat
+  ```
+- Or use PowerShell:
+  ```powershell
+  .\start.ps1
+  ```
+
+**Cross-platform (Python):**
+```bash
+python scripts/start_docker.py
+```
+
+These scripts will:
+1. Start all Docker containers
+2. Wait for frontend service to be ready
+3. **Automatically open browser to access the application**
+
+#### Method 2: Manual Start
+
 The entire system (database, backend, and frontend) can be started with a single command:
 
 ```bash
@@ -36,6 +60,8 @@ This will:
 1. Build and start MySQL database (port 53306)
 2. Build and start Backend API (port 8000)
 3. Build and start Frontend (port 3000)
+
+Then manually access: http://localhost:3000
 
 ### Access the Application
 
@@ -122,10 +148,12 @@ Use these files to test the CSV batch prediction feature in the Upload Dataset p
 
 ## Documentation
 
-- [Backend API Documentation](backend/后端对接文档.md) - Complete API reference (Chinese)
 - [Frontend README](frontend/README.md) - Frontend module documentation
 - [Backend README](backend/README.md) - Backend module documentation
-- [ML System Integration](ML系统对接文档.md) - ML engine integration guide (Chinese)
+- [ML System Integration](ML_System_Integration_Documentation.md) - ML engine integration guide
+- [ML Model QuickStart](DemoB_Model_QuickStart.md) - ML model quick start guide
+- [Parameter Input Specification](Parameter_Input_Specification.md) - Parameter input specification
+
 
 ## License
 

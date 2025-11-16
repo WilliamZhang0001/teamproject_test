@@ -139,8 +139,19 @@ const ParameterQueryPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    // Validate required fields
     if (!biomoleculeName.trim()) {
       setError('Please enter a biomolecule name');
+      return;
+    }
+
+    if (!biomoleculeType || !biomoleculeType.trim()) {
+      setError('Please select a biomolecule type');
+      return;
+    }
+
+    if (!experimentType || !experimentType.trim()) {
+      setError('Please select an experiment type');
       return;
     }
 
@@ -155,9 +166,9 @@ const ParameterQueryPage: React.FC = () => {
 
     try {
       const input: ExperimentInput = {
-        biomolecule_type: biomoleculeType,
-        biomolecule_name: biomoleculeName,
-        property: experimentType,
+        biomolecule_type: biomoleculeType.trim(),
+        biomolecule_name: biomoleculeName.trim(),
+        property: experimentType.trim(),
         ...(pH !== '' && { pH: Number(pH) }),
         ...(temperature !== '' && { temperature_c: Number(temperature) }),
         ...(concentration !== '' && { concentration_mg_ml: Number(concentration) }),
@@ -563,62 +574,132 @@ const ParameterQueryPage: React.FC = () => {
           {predictionType === 'parameter' && results.data?.predicted_parameters && (
             <Box sx={{ mb: 3 }}>
               <Typography variant="h6" gutterBottom>Predicted Parameter Values</Typography>
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Parameter</TableCell>
-                      <TableCell align="right">Recommended Value</TableCell>
-                      <TableCell align="right">Common Values / Min</TableCell>
-                      <TableCell align="right">Count / Max</TableCell>
-                      <TableCell align="right">Usage / Median</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {Object.entries(results.data.predicted_parameters).map(([param, value]: [string, any]) => {
-                      const isStringParam = value.is_string || typeof value.recommended_value === 'string';
-                      
-                      return (
-                        <TableRow key={param}>
-                          <TableCell>{parameterLabels[param] || param}</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                            {isStringParam ? (
-                              value.recommended_value || 'N/A'
-                            ) : (
-                              typeof value.recommended_value === 'number' 
-                                ? value.recommended_value.toFixed(2) 
-                                : value.recommended_value || 'N/A'
-                            )}
-                          </TableCell>
-                          <TableCell align="right">
-                            {isStringParam ? (
-                              value.common_values && value.common_values.length > 0
-                                ? value.common_values.slice(0, 3).join(', ')
-                                : 'N/A'
-                            ) : (
-                              typeof value.min === 'number' ? value.min.toFixed(2) : (value.min || 'N/A')
-                            )}
-                          </TableCell>
-                          <TableCell align="right">
-                            {isStringParam ? (
-                              value.count ? `${value.count} occurrences` : 'N/A'
-                            ) : (
-                              typeof value.max === 'number' ? value.max.toFixed(2) : (value.max || 'N/A')
-                            )}
-                          </TableCell>
-                          <TableCell align="right">
-                            {isStringParam ? (
-                              value.top_count ? `Used ${value.top_count} times` : 'N/A'
-                            ) : (
-                              typeof value.median === 'number' ? value.median.toFixed(2) : (value.median || 'N/A')
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              
+              {/* Display provided parameters as separate alert message */}
+              {Object.entries(results.data.predicted_parameters).map(([param, value]: [string, any]) => {
+                // Check if parameter is already provided (special key for multiple provided params)
+                if (param === '_provided_params' && value.status === 'already_provided') {
+                  const providedParams = value.provided_params || [];
+                  const providedValues = value.provided_values || {};
+                  
+                  return (
+                    <Alert 
+                      key="provided_params_alert" 
+                      severity="info" 
+                      sx={{ mb: 2 }}
+                    >
+                      <Typography variant="body1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                        {value.message || 'Parameters already provided'}
+                      </Typography>
+                      <Box component="div" sx={{ mt: 1 }}>
+                        {providedParams.map((p: string, idx: number) => {
+                          const val = providedValues[p];
+                          const displayVal = typeof val === 'number' 
+                            ? val.toFixed(2) 
+                            : (val || 'N/A');
+                          return (
+                            <Typography key={p} variant="body2" component="span">
+                              {parameterLabels[p] || p}: <strong>{displayVal}</strong>
+                              {idx < providedParams.length - 1 ? ', ' : ''}
+                            </Typography>
+                          );
+                        })}
+                      </Box>
+                    </Alert>
+                  );
+                }
+                
+                // Check if single parameter is already provided (backward compatibility)
+                if (value.status === 'already_provided' && param !== '_provided_params') {
+                  return (
+                    <Alert 
+                      key={`${param}_alert`} 
+                      severity="info" 
+                      sx={{ mb: 2 }}
+                    >
+                      <Typography variant="body1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                        {value.message || `${param} already provided`}
+                      </Typography>
+                      <Typography variant="body2">
+                        {parameterLabels[param] || param}: <strong>
+                          {typeof value.provided_value === 'number' 
+                            ? value.provided_value.toFixed(2) 
+                            : value.provided_value || 'N/A'}
+                        </strong>
+                      </Typography>
+                    </Alert>
+                  );
+                }
+                
+                return null;
+              })}
+              
+              {/* Display predicted parameters in table */}
+              {Object.entries(results.data.predicted_parameters).some(([param, value]: [string, any]) => 
+                param !== '_provided_params' && value.status !== 'already_provided'
+              ) && (
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Parameter</TableCell>
+                        <TableCell align="right">Recommended Value</TableCell>
+                        <TableCell align="right">Common Values / Min</TableCell>
+                        <TableCell align="right">Count / Max</TableCell>
+                        <TableCell align="right">Usage / Median</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {Object.entries(results.data.predicted_parameters)
+                        .filter(([param, value]: [string, any]) => 
+                          param !== '_provided_params' && value.status !== 'already_provided'
+                        )
+                        .map(([param, value]: [string, any]) => {
+                          // Parameter needs prediction
+                          const isStringParam = value.is_string || typeof value.recommended_value === 'string';
+                          
+                          return (
+                            <TableRow key={param}>
+                              <TableCell>{parameterLabels[param] || param}</TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                                {isStringParam ? (
+                                  value.recommended_value || 'N/A'
+                                ) : (
+                                  typeof value.recommended_value === 'number' 
+                                    ? value.recommended_value.toFixed(2) 
+                                    : value.recommended_value || 'N/A'
+                                )}
+                              </TableCell>
+                              <TableCell align="right">
+                                {isStringParam ? (
+                                  value.common_values && value.common_values.length > 0
+                                    ? value.common_values.slice(0, 3).join(', ')
+                                    : 'N/A'
+                                ) : (
+                                  typeof value.min === 'number' ? value.min.toFixed(2) : (value.min || 'N/A')
+                                )}
+                              </TableCell>
+                              <TableCell align="right">
+                                {isStringParam ? (
+                                  value.count ? `${value.count} occurrences` : 'N/A'
+                                ) : (
+                                  typeof value.max === 'number' ? value.max.toFixed(2) : (value.max || 'N/A')
+                                )}
+                              </TableCell>
+                              <TableCell align="right">
+                                {isStringParam ? (
+                                  value.top_count ? `Used ${value.top_count} times` : 'N/A'
+                                ) : (
+                                  typeof value.median === 'number' ? value.median.toFixed(2) : (value.median || 'N/A')
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
               <Chip
                 label={`Overall Confidence: ${(results.data.confidence * 100).toFixed(1)}%`}
                 color="primary"
@@ -633,39 +714,152 @@ const ParameterQueryPage: React.FC = () => {
               <Typography variant="h6" gutterBottom>
                 Similar Literature References ({results.data.similar_literature.length})
               </Typography>
-              {results.data.similar_literature.map((lit: LiteratureRecord, idx: number) => (
-                <Accordion key={lit.id || idx} sx={{ mt: 1 }}>
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Box>
-                        <Typography variant="subtitle1" noWrap>
-                          {lit.literature?.title || `Literature Record #${lit.id}`}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {lit.literature?.authors && lit.literature?.pub_year
-                            ? `${lit.literature.authors} • ${lit.literature.pub_year}`
-                            : lit.literature?.authors
-                            ? lit.literature.authors
-                            : lit.literature?.pub_year
-                            ? `Year: ${lit.literature.pub_year}`
-                            : 'No metadata available'}
-                        </Typography>
+              {results.data.similar_literature.map((lit: LiteratureRecord, idx: number) => {
+                // Get literature metadata (support both top-level and nested structure)
+                const title = lit.title || lit.literature?.title;
+                const authors = lit.authors || lit.literature?.authors;
+                const pubYear = lit.pub_year || lit.literature?.pub_year;
+                const doi = lit.doi || lit.literature?.doi;
+                
+                return (
+                  <Accordion key={lit.id || idx} sx={{ mt: 1 }}>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pr: 1 }}>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography 
+                            variant="subtitle1" 
+                            sx={{ 
+                              fontWeight: 600,
+                              color: 'primary.main',
+                              mb: 0.5,
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word',
+                              hyphens: 'auto',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
+                          >
+                            {title || `Literature Record #${lit.id}`}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {authors && pubYear
+                              ? `${authors} • ${pubYear}`
+                              : authors
+                              ? authors
+                              : pubYear
+                              ? `Year: ${pubYear}`
+                              : 'No metadata available'}
+                          </Typography>
+                        </Box>
+                        <Chip
+                          label={`Similarity: ${(lit.similarity_score * 100).toFixed(1)}%`}
+                          color="primary"
+                          size="small"
+                          sx={{ ml: 2, flexShrink: 0 }}
+                        />
                       </Box>
-                      <Chip
-                        label={`Similarity: ${(lit.similarity_score * 100).toFixed(1)}%`}
-                        color="primary"
-                        size="small"
-                        sx={{ ml: 2 }}
-                      />
-                    </Box>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <Box>
-                      {lit.literature?.doi && (
-                        <Typography variant="body2" sx={{ mb: 2 }}>
-                          <strong>DOI:</strong> {lit.literature.doi}
-                        </Typography>
-                      )}
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Box>
+                        {/* Literature Metadata Section */}
+                        {(authors || pubYear || doi) && (
+                          <Box 
+                            sx={{ 
+                              mb: 2, 
+                              p: 1.5, 
+                              bgcolor: 'grey.50', 
+                              borderRadius: 1, 
+                              border: '1px solid', 
+                              borderColor: 'grey.200' 
+                            }}
+                          >
+                            <Grid container spacing={1.5}>
+                              {authors && (
+                                <Grid item xs={12} sm={pubYear || doi ? 6 : 12}>
+                                  <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                                    <Typography 
+                                      variant="caption" 
+                                      sx={{ 
+                                        fontWeight: 'bold', 
+                                        color: 'text.secondary',
+                                        minWidth: '60px',
+                                        mr: 1
+                                      }}
+                                    >
+                                      Authors:
+                                    </Typography>
+                                    <Typography 
+                                      variant="body2" 
+                                      sx={{ 
+                                        color: 'text.primary',
+                                        wordBreak: 'break-word'
+                                      }}
+                                    >
+                                      {authors}
+                                    </Typography>
+                                  </Box>
+                                </Grid>
+                              )}
+                              {pubYear && (
+                                <Grid item xs={12} sm={authors && doi ? 3 : 6}>
+                                  <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                                    <Typography 
+                                      variant="caption" 
+                                      sx={{ 
+                                        fontWeight: 'bold', 
+                                        color: 'text.secondary',
+                                        minWidth: '50px',
+                                        mr: 1
+                                      }}
+                                    >
+                                      Year:
+                                    </Typography>
+                                    <Typography variant="body2" color="text.primary">
+                                      {pubYear}
+                                    </Typography>
+                                  </Box>
+                                </Grid>
+                              )}
+                              {doi && (
+                                <Grid item xs={12} sm={authors && pubYear ? 3 : authors || pubYear ? 6 : 12}>
+                                  <Box sx={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                                    <Typography 
+                                      variant="caption" 
+                                      sx={{ 
+                                        fontWeight: 'bold', 
+                                        color: 'text.secondary',
+                                        minWidth: '45px',
+                                        mr: 1
+                                      }}
+                                    >
+                                      DOI:
+                                    </Typography>
+                                    <Typography 
+                                      variant="body2" 
+                                      component="a"
+                                      href={doi.startsWith('http') ? doi : `https://doi.org/${doi}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      sx={{ 
+                                        color: 'primary.main',
+                                        textDecoration: 'none',
+                                        '&:hover': {
+                                          textDecoration: 'underline'
+                                        },
+                                        wordBreak: 'break-word'
+                                      }}
+                                    >
+                                      {doi}
+                                    </Typography>
+                                  </Box>
+                                </Grid>
+                              )}
+                            </Grid>
+                          </Box>
+                        )}
                       {lit.parameters && (
                         <Box sx={{ mb: 2 }}>
                           <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
@@ -726,7 +920,8 @@ const ParameterQueryPage: React.FC = () => {
                     </Box>
                   </AccordionDetails>
                 </Accordion>
-              ))}
+              );
+              })}
             </Box>
           )}
         </Paper>

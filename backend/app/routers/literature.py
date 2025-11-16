@@ -59,8 +59,14 @@ async def search_similar_literature(
         time_min: Time in minutes
         shear_rate_s1: Shear rate
         pressure_bar: Pressure in bar
-        limit: Number of results to return
+        limit: Number of results to return (maximum 10)
     """
+    # Enforce maximum limit of 10 for security and performance
+    if limit > 10:
+        limit = 10
+    elif limit < 1:
+        limit = 1
+    
     target_params = {}
     
     if pH is not None:

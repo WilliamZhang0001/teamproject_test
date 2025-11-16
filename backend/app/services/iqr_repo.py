@@ -19,13 +19,16 @@ class IqrHit:
 class IqrRepository:
     """Loads and queries IQR statistics with defined priority order."""
 
-    def __init__(self, stats_path: Optional[Path] = None) -> None:
+    def __init__(self, stats_path: Optional[Path] = None, lazy_load: bool = True) -> None:
         repo_root = Path(__file__).resolve()
         for _ in range(4):
             repo_root = repo_root.parent
         default_path = repo_root / "models" / "iqr_statistics.json"
         self.stats_path = stats_path or default_path
-        self._stats = self._load()
+        self._lazy_load = lazy_load
+        self._stats: Optional[Dict] = None
+        if not lazy_load:
+            self._stats = self._load()
 
     # ------------------------------------------------------------------
     def _load(self) -> Dict:
@@ -43,6 +46,10 @@ class IqrRepository:
         experiment_type: Optional[str],
         recommend_parameters: Iterable[str],
     ) -> Tuple[Dict[str, Optional[Dict]], Dict[str, IqrHit]]:
+        # Lazy load statistics on first use
+        if self._stats is None:
+            self._stats = self._load()
+        
         biomolecule_name = (biomolecule_name or "").strip() or None
         experiment_type = (experiment_type or "").strip() or None
         results: Dict[str, Optional[Dict]] = {}
@@ -79,6 +86,9 @@ class IqrRepository:
         biomolecule_name: Optional[str],
         experiment_type: Optional[str],
     ) -> Tuple[Optional[Dict], IqrHit]:
+        # Ensure stats are loaded
+        if self._stats is None:
+            self._stats = self._load()
         stats = self._stats
         # Level 1: experiment + biomolecule
         if biomolecule_name and experiment_type:
@@ -89,33 +99,30 @@ class IqrRepository:
             if param_stats:
                 return param_stats, IqrHit(
                     level="experiment_biomolecule",
-                    source_text=f"基于 {biomolecule_name} 的 {experiment_type} 数据",
+                    source_text=f"Based on {experiment_type} data for {biomolecule_name}",
                 )
 
-        # Level 2: experiment type
         if experiment_type:
             exp_stats = stats.get("by_experiment_type", {}).get(experiment_type, {})
             param_stats = exp_stats.get(parameter)
             if param_stats:
                 return param_stats, IqrHit(
                     level="experiment",
-                    source_text=f"基于所有 {experiment_type} 实验数据",
+                    source_text=f"Based on all {experiment_type} experimental data",
                 )
 
-        # Level 3: biomolecule
         if biomolecule_name:
             bio_stats = stats.get("by_biomolecule", {}).get(biomolecule_name, {})
             param_stats = bio_stats.get(parameter)
             if param_stats:
                 return param_stats, IqrHit(
                     level="biomolecule",
-                    source_text=f"基于 {biomolecule_name} 的所有实验数据",
+                    source_text=f"Based on all experimental data for {biomolecule_name}",
                 )
 
-        # Level 4: global
         global_stats = stats.get("global", {})
         param_stats = global_stats.get(parameter)
         if param_stats:
-            return param_stats, IqrHit(level="global", source_text="基于所有实验数据")
+            return param_stats, IqrHit(level="global", source_text="Based on all experimental data")
 
-        return None, IqrHit(level="not_found", source_text="暂无可用统计")
+        return None, IqrHit(level="not_found", source_text="No statistics available")

@@ -1,6 +1,7 @@
 """
 Literature Database Access Layer
 """
+import math
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select, func, or_, and_
 from typing import List, Optional, Dict, Any
@@ -136,12 +137,23 @@ def search_similar_records(
                 # Extract from various possible fields (same place as raw_context would be)
                 title = full_data.get('title') or full_data.get('source_title') or full_data.get('paper_title')
                 authors = full_data.get('authors') or full_data.get('source_authors') or full_data.get('paper_authors')
-                pub_year = full_data.get('pub_year') or full_data.get('publication_year') or full_data.get('year') or full_data.get('paper_year')
+                pub_year_raw = full_data.get('pub_year') or full_data.get('publication_year') or full_data.get('source_pub_year') or full_data.get('year') or full_data.get('paper_year')
                 doi = full_data.get('source_doi') or full_data.get('doi') or full_data.get('paper_doi')
                 
-                # Only create literature info if we have at least title (real data requirement)
-                # Title is the most important, similar to how raw_context is required
-                if title:
+                # Convert pub_year to int if it's a string
+                pub_year = None
+                if pub_year_raw is not None:
+                    try:
+                        if isinstance(pub_year_raw, str):
+                            pub_year = int(pub_year_raw.strip())
+                        elif isinstance(pub_year_raw, (int, float)):
+                            pub_year = int(pub_year_raw)
+                    except (ValueError, TypeError):
+                        pub_year = None
+                
+                # Create literature info if we have at least one field (not just title)
+                # This allows displaying partial metadata even if title is missing
+                if title or authors or pub_year or doi:
                     literature_info = {
                         'doi': doi,
                         'title': title,
@@ -149,22 +161,89 @@ def search_similar_records(
                         'pub_year': pub_year
                     }
             
-            # Only add literature info if we found real title data
-            if literature_info and literature_info.get('title'):
+            # Add literature info if we found any metadata (not just title)
+            if literature_info:
                 record_dict['literature'] = literature_info
+                # Also add fields to top level for easier access
+                if literature_info.get('title'):
+                    record_dict['title'] = literature_info['title']
+                if literature_info.get('authors'):
+                    record_dict['authors'] = literature_info['authors']
+                if literature_info.get('pub_year'):
+                    record_dict['pub_year'] = literature_info['pub_year']
+                if literature_info.get('doi'):
+                    record_dict['doi'] = literature_info['doi']
             
             scored_records.append(record_dict)
     
-    # Sort by similarity and return Top K
+    # Sort by similarity
     scored_records.sort(key=lambda x: x['similarity_score'], reverse=True)
-    return scored_records[:limit]
+    
+    # Remove duplicates based on DOI, literature ID, or title
+    # This ensures we don't return the same literature multiple times
+    seen_dois = set()
+    seen_literature_ids = set()
+    seen_titles = set()  # Also check by title as fallback
+    deduplicated_records = []
+    
+    for record in scored_records:
+        # Check for duplicate by DOI (most reliable)
+        doi = None
+        if record.get('literature') and isinstance(record['literature'], dict) and record['literature'].get('doi'):
+            doi = record['literature']['doi'].strip() if record['literature']['doi'] else None
+        elif record.get('doi'):
+            doi = record['doi'].strip() if record['doi'] else None
+        
+        # Check for duplicate by literature_id
+        lit_id = None
+        if 'literature_id' in record and record['literature_id']:
+            lit_id = record['literature_id']
+        
+        # Check for duplicate by title (fallback if no DOI or lit_id)
+        title = None
+        if record.get('literature') and isinstance(record['literature'], dict) and record['literature'].get('title'):
+            title = record['literature']['title'].strip().lower() if record['literature']['title'] else None
+        elif record.get('title'):
+            title = record['title'].strip().lower() if record['title'] else None
+        
+        # Skip if we've seen this DOI, literature ID, or title before
+        if doi and doi in seen_dois:
+            continue
+        if lit_id and lit_id in seen_literature_ids:
+            continue
+        if title and title in seen_titles:
+            continue
+        
+        # Mark as seen
+        if doi:
+            seen_dois.add(doi)
+        if lit_id:
+            seen_literature_ids.add(lit_id)
+        if title:
+            seen_titles.add(title)
+        
+        deduplicated_records.append(record)
+        
+        # Stop if we have enough unique records
+        if len(deduplicated_records) >= limit:
+            break
+    
+    return deduplicated_records
 
 
 def calculate_similarity(target_params: Dict[str, Any], record: ExtractionRecord) -> float:
     """
-    Calculate parameter similarity score
+    Calculate parameter similarity score using joint feature vector approach.
     
-    Uses inverse of weighted Euclidean distance as similarity
+    Priority strategy:
+    1. Prefer records with ALL provided parameters (complete matches)
+    2. Penalize records with missing parameters using penalty coefficients
+    3. All parameters form a joint feature vector for comparison
+    
+    Uses weighted Euclidean distance on normalized feature vectors, with missing parameter penalties.
+    
+    Returns:
+        Similarity score between 0.0 and 1.0
     """
     param_weights = {
         'pH': 0.25,
@@ -177,8 +256,20 @@ def calculate_similarity(target_params: Dict[str, Any], record: ExtractionRecord
         'pressure_bar': 0.02
     }
     
-    total_weight = 0.0
-    weighted_distance = 0.0
+    # Normalization ranges for converting parameters to [0, 1] range
+    normalization_ranges = {
+        'pH': 14.0,                    # 0-14 (standard pH scale)
+        'temperature_c': 150.0,         # -20 to 130°C range
+        'concentration_mg_ml': 1000.0,  # 0-1000 mg/mL
+        'ionic_strength_mM': 500.0,     # 0-500 mM
+        'time_min': 1440.0,            # 0-1440 minutes (24 hours)
+        'shear_rate_s1': 1000.0,       # 0-1000 s⁻¹
+        'pressure_bar': 1000.0         # 0-1000 bar
+    }
+    
+    # Penalty coefficient for missing parameters
+    # Higher values mean more severe penalty for missing parameters
+    MISSING_PARAM_PENALTY = 0.5  # 50% penalty per missing parameter (weighted)
     
     record_params = {
         'pH': record.pH,
@@ -191,55 +282,127 @@ def calculate_similarity(target_params: Dict[str, Any], record: ExtractionRecord
         'pressure_bar': record.pressure_bar
     }
     
+    # Count provided parameters by user
+    provided_params_count = sum(1 for param in param_weights.keys() 
+                              if target_params.get(param) is not None)
+    
+    # If user provided no parameters, return based on confidence but very low
+    if provided_params_count == 0:
+        return record.confidence * 0.1
+    
+    # Build joint feature vectors: normalized and weighted parameter values
+    target_vector = []
+    record_vector = []
+    weights_vector = []
+    matched_params_count = 0
+    missing_params_penalty_weight = 0.0  # Total weight of missing parameters
+    
     for param, weight in param_weights.items():
         target_val = target_params.get(param)
         record_val = record_params.get(param)
         
-        # 如果两者都有值，计算归一化距离
-        if target_val is not None and record_val is not None:
-            # 归一化距离
-            distance = abs(target_val - record_val)
-            # 使用合理的范围进行归一化
-            ranges = {
-                'pH': 14.0,
-                'temperature_c': 80.0,
-                'concentration_mg_ml': 100.0,
-                'ionic_strength_mM': 200.0,
-                'time_min': 1440.0,  # 24小时
-                'shear_rate_s1': 1000.0,
-                'pressure_bar': 10.0
-            }
-            
-            if param in ranges:
-                normalized_distance = distance / ranges[param]
-            else:
-                normalized_distance = min(distance / (abs(record_val) + 1), 1.0)
-            
-            weighted_distance += weight * normalized_distance
-            total_weight += weight
+        # Only consider parameters that user provided
+        if target_val is None:
+            continue
         
-        # 对于additive等字符串字段，做简单的匹配
-        elif param == 'additive' and target_val and record_val:
-            if str(target_val).lower() == str(record_val).lower():
-                weighted_distance += 0  # 完全匹配
+        # Check if record has this parameter
+        if record_val is None:
+            # Parameter is missing in record - apply penalty
+            missing_params_penalty_weight += weight
+            # For missing parameters, add penalty dimension to vectors
+            # Target has value, record doesn't - maximum distance
+            target_vector.append(1.0)  # Normalized target value would be 1.0
+            record_vector.append(0.0)  # Missing = 0 (maximum distance)
+            weights_vector.append(weight)
+            continue
+        
+        # Both values exist - process normally
+        if param == 'additive':
+            # For additive, handle string comparison specially
+            if str(target_val).lower().strip() == str(record_val).lower().strip():
+                target_vector.append(1.0)
+                record_vector.append(1.0)
             else:
-                weighted_distance += weight  # 不匹配
-            total_weight += weight
+                target_vector.append(1.0)
+                record_vector.append(0.0)
+            weights_vector.append(weight)
+            matched_params_count += 1
+        else:
+            # Normalize numeric values to [0, 1] range
+            if param in normalization_ranges:
+                range_val = normalization_ranges[param]
+                # Normalize: value / range (clamped to [0, 1])
+                # Handle negative values for temperature
+                if param == 'temperature_c' and range_val > 0:
+                    # Temperature can be negative, shift to [0, range+offset]
+                    offset = 20.0  # Shift -20°C to 0
+                    target_normalized = max(0.0, min(1.0, (target_val + offset) / (range_val + offset)))
+                    record_normalized = max(0.0, min(1.0, (record_val + offset) / (range_val + offset)))
+                else:
+                    target_normalized = max(0.0, min(1.0, target_val / range_val))
+                    record_normalized = max(0.0, min(1.0, record_val / range_val))
+            else:
+                # Fallback normalization for parameters without predefined range
+                max_val = max(abs(target_val), abs(record_val), 1.0)
+                target_normalized = abs(target_val) / max_val if max_val > 0 else 0.0
+                record_normalized = abs(record_val) / max_val if max_val > 0 else 0.0
+                target_normalized = max(0.0, min(1.0, target_normalized))
+                record_normalized = max(0.0, min(1.0, record_normalized))
+            
+            target_vector.append(target_normalized)
+            record_vector.append(record_normalized)
+            weights_vector.append(weight)
+            matched_params_count += 1
     
-    # 如果没有提供任何匹配的参数，返回基于置信度的基础相似度
-    # 这样可以支持仅通过生物分子名称搜索的情况
-    if total_weight == 0:
-        # 返回一个基础相似度，基于记录的置信度
-        # 当没有参数比较时，至少返回置信度作为相似度
-        return record.confidence * 0.5  # 50%的置信度作为基础分数
+    # If no parameters matched (all missing), return 0
+    if matched_params_count == 0 and missing_params_penalty_weight > 0:
+        return 0.0
     
-    # 计算相似度分数 (1 - 归一化距离)
-    similarity = 1.0 - (weighted_distance / total_weight)
+    # If no parameters provided by user and no matching records
+    if len(target_vector) == 0:
+        return 0.0
     
-    # 应用置信度权重
-    similarity *= record.confidence
+    # Calculate weighted Euclidean distance on joint feature vectors
+    # Distance = sqrt(sum(weight_i * (target_i - record_i)^2) / sum(weight_i))
+    weighted_squared_diff = 0.0
+    total_weight = 0.0
     
-    return max(0.0, similarity)
+    for i in range(len(target_vector)):
+        diff = target_vector[i] - record_vector[i]
+        weighted_squared_diff += weights_vector[i] * (diff ** 2)
+        total_weight += weights_vector[i]
+    
+    # Normalized weighted Euclidean distance
+    normalized_distance = math.sqrt(weighted_squared_diff / total_weight) if total_weight > 0 else 1.0
+    
+    # Convert distance to similarity: similarity = 1 - distance
+    base_similarity = 1.0 - normalized_distance
+    
+    # Apply penalty for missing parameters
+    # Penalty reduces similarity based on the proportion of missing parameter weight
+    if missing_params_penalty_weight > 0 and total_weight > 0:
+        missing_proportion = missing_params_penalty_weight / total_weight
+        # Apply penalty: multiply similarity by (1 - penalty * missing_proportion)
+        # This ensures complete matches score higher than partial matches
+        penalty_factor = 1.0 - (MISSING_PARAM_PENALTY * missing_proportion)
+        base_similarity *= max(0.1, penalty_factor)  # Minimum 10% similarity even with penalties
+    
+    # Bonus for complete matches: if all parameters are matched, add small bonus
+    # This ensures complete matches always rank above partial matches
+    if missing_params_penalty_weight == 0 and matched_params_count == provided_params_count:
+        # Complete match bonus: add 0.05 to similarity (max 1.0)
+        base_similarity = min(1.0, base_similarity + 0.05)
+    
+    # Apply minimum similarity threshold
+    MIN_SIMILARITY_THRESHOLD = 0.1
+    if base_similarity < MIN_SIMILARITY_THRESHOLD:
+        return 0.0
+    
+    # Adjust similarity by confidence: 80% similarity, 20% confidence
+    adjusted_similarity = base_similarity * 0.8 + record.confidence * 0.2
+    
+    # Ensure result is between 0 and 1
+    return max(0.0, min(1.0, adjusted_similarity))
 
 
 def get_most_common_additives(
@@ -335,11 +498,23 @@ def get_top_records_by_confidence(
             # Extract from various possible fields (same place as raw_context would be)
             title = full_data.get('title') or full_data.get('source_title') or full_data.get('paper_title')
             authors = full_data.get('authors') or full_data.get('source_authors') or full_data.get('paper_authors')
-            pub_year = full_data.get('pub_year') or full_data.get('publication_year') or full_data.get('year') or full_data.get('paper_year')
+            pub_year_raw = full_data.get('pub_year') or full_data.get('publication_year') or full_data.get('source_pub_year') or full_data.get('year') or full_data.get('paper_year')
             doi = full_data.get('source_doi') or full_data.get('doi') or full_data.get('paper_doi')
             
-            # Only create literature info if we have at least title (real data requirement)
-            if title:
+            # Convert pub_year to int if it's a string
+            pub_year = None
+            if pub_year_raw is not None:
+                try:
+                    if isinstance(pub_year_raw, str):
+                        pub_year = int(pub_year_raw.strip())
+                    elif isinstance(pub_year_raw, (int, float)):
+                        pub_year = int(pub_year_raw)
+                except (ValueError, TypeError):
+                    pub_year = None
+            
+            # Create literature info if we have at least one field (not just title)
+            # This allows displaying partial metadata even if title is missing
+            if title or authors or pub_year or doi:
                 literature_info = {
                     'doi': doi,
                     'title': title,
@@ -347,9 +522,18 @@ def get_top_records_by_confidence(
                     'pub_year': pub_year
                 }
         
-        # Only add literature info if we found real title data
-        if literature_info and literature_info.get('title'):
+        # Add literature info if we found any metadata (not just title)
+        if literature_info:
             record_dict['literature'] = literature_info
+            # Also add fields to top level for easier access
+            if literature_info.get('title'):
+                record_dict['title'] = literature_info['title']
+            if literature_info.get('authors'):
+                record_dict['authors'] = literature_info['authors']
+            if literature_info.get('pub_year'):
+                record_dict['pub_year'] = literature_info['pub_year']
+            if literature_info.get('doi'):
+                record_dict['doi'] = literature_info['doi']
         
         result.append(record_dict)
     

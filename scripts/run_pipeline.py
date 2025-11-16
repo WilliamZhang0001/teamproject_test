@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
 """
-统一的数据处理管道
+Unified data processing pipeline
 
-功能：
-1. 使用增强型抓取器获取文献（两种模式）
-   - 模式1: 通用查询（原方案）
-   - 模式2: 基于蛋白质（新方案，推荐用于训练）
-2. NLP提取实验参数
-3. 存储到structured_store.jsonl
-4. 训练ML模型
+Features:
+1. Use enhanced scraper to fetch literature (two modes)
+   - Mode 1: General query (original approach)
+   - Mode 2: Protein-based (new approach, recommended for training)
+2. NLP extraction of experimental parameters
+3. Store to structured_store.jsonl
+4. Train ML model (optional)
+5. Auto-import to database (enabled by default)
 
-用法:
-    # 模式1: 通用查询
+Usage:
+    # Mode 1: General query
     python scripts/run_pipeline.py --query "protein stability pH temperature"
     
-    # 模式2: 基于蛋白质
+    # Mode 2: Protein-based
     python scripts/run_pipeline.py --mode protein --proteins lysozyme,albumin,insulin
     
-    # 模式3: 所有生物聚合物（蛋白质、肽、多糖）- 推荐
+    # Mode 3: All biomolecules (proteins, peptides, polysaccharides) - Recommended
     python scripts/run_pipeline.py --mode biomolecule --train
     
-    # 模式3: 启用Semantic Scholar（可选，默认已禁用）
+    # Mode 3: Enable Semantic Scholar (optional, disabled by default)
     python scripts/run_pipeline.py --mode biomolecule --enable-s2 --train
 """
 import argparse
@@ -38,24 +39,26 @@ from literature_mining.extractors.stability_extractor import extract_from_text
 
 from literature_mining.storage.structured_store import StructuredStore
 from ml_engine.training.train_stability import train_from_store, save_model
+from backend.app.core.db import SessionLocal, init_db
+from backend.app.services.literature_service import LiteratureService
 
 
 def run_scraping(query: str, output_file: str = "raw_papers.json") -> List[Dict[str, Any]]:
-    """步骤1a：通用查询抓取文献"""
+    """Step 1a: General query scraping"""
     print("\n" + "="*60)
-    print("步骤 1/4: 抓取文献（通用查询模式）")
+    print("Step 1/5: Scrape Literature (General Query Mode)")
     print("="*60)
     
     scraper = UnifiedScraper(cache_dir=".http_cache")
     results = scraper.search(query)
     
-    # 保存原始结果
+    # Save raw results
     output_path = Path(output_file)
     with output_path.open('w', encoding='utf-8') as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
     
-    print(f"\n✅ 抓取完成，共 {len(results)} 条文献")
-    print(f"✅ 原始数据已保存到: {output_path}")
+    print(f"\nScraping completed: {len(results)} papers")
+    print(f"Raw data saved to: {output_path}")
     
     return results
 
@@ -63,30 +66,30 @@ def run_scraping(query: str, output_file: str = "raw_papers.json") -> List[Dict[
 def run_protein_scraping(proteins: List[str] = None, 
                         max_per_source: int = 300,
                         output_file: str = "raw_papers.json") -> List[Dict[str, Any]]:
-    """步骤1b：基于蛋白质抓取文献（推荐用于训练）"""
+    """Step 1b: Protein-based scraping (recommended for training)"""
     print("\n" + "="*60)
-    print("步骤 1/4: 抓取文献（蛋白质模式）")
+    print("Step 1/5: Scrape Literature (Protein Mode)")
     print("="*60)
     
     if proteins:
-        print(f"目标蛋白质: {', '.join(proteins)}")
+        print(f"Target proteins: {', '.join(proteins)}")
     else:
-        print("使用默认蛋白质列表（~30个蛋白质）")
+        print("Using default protein list (~30 proteins)")
     
-    # 使用protein_specific_scraper
+    # Use protein_specific_scraper
     stats = search_proteins_for_training(
         proteins=proteins,
         max_per_protein_per_source=max_per_source,
         output_file=output_file
     )
     
-    # 读取结果
+    # Read results
     with open(output_file, 'r', encoding='utf-8') as f:
         data = json.load(f)
         papers = data['papers']
     
-    print(f"\n✅ 抓取完成，共 {len(papers)} 条文献（去重后）")
-    print(f"✅ 原始数据已保存到: {output_file}")
+    print(f"\nScraping completed: {len(papers)} papers (after deduplication)")
+    print(f"Raw data saved to: {output_file}")
     
     return papers
 
@@ -99,61 +102,61 @@ def run_biomolecule_scraping(
     overwrite: bool = True
 ) -> List[Dict[str, Any]]:
     """
-    步骤1c：基于生物聚合物抓取文献（支持蛋白质、肽、多糖）
+    Step 1c: Biomolecule-based scraping (supports proteins, peptides, polysaccharides)
     
     Args:
-        biomolecule_types: 生物聚合物类型列表，如 ['protein', 'peptide', 'polysaccharide']
-        max_per_source: 每个生物分子每个数据源的最大结果数
-        output_file: 输出文件名
+        biomolecule_types: List of biomolecule types, e.g., ['protein', 'peptide', 'polysaccharide']
+        max_per_source: Maximum results per biomolecule per data source
+        output_file: Output file name
     """
     print("\n" + "="*60)
-    print("步骤 1/4: 抓取文献（生物聚合物模式）")
+    print("Step 1/5: Scrape Literature (Biomolecule Mode)")
     print("="*60)
     
     if biomolecule_types is None:
         biomolecule_types = ['protein', 'peptide', 'polysaccharide']
     
-    print(f"目标类型: {', '.join(biomolecule_types)}")
-    print(f"每个生物分子每个数据源最多: {max_per_source} 篇")
+    print(f"Target types: {', '.join(biomolecule_types)}")
+    print(f"Max per biomolecule per source: {max_per_source} papers")
     
     from literature_mining.scrapers.protein_specific_scraper import (
         ProteinSpecificScraper, BiomoleculeDatabase
     )
     from literature_mining.scrapers.enhanced_scraper import ScraperConfig
     
-    # 设置S2开关（默认关闭）
+    # Set S2 switch (disabled by default)
     ScraperConfig.S2_ENABLED = enable_s2
     
     scraper = ProteinSpecificScraper()
     biomolecule_db = BiomoleculeDatabase()
     
-    # 获取所有类型的生物分子
+    # Get all biomolecules by type
     all_biomolecules = biomolecule_db.get_all_biomolecules(biomolecule_types)
     
     total_count = sum(len(molecules) for molecules in all_biomolecules.values())
-    print(f"总计: {total_count} 个生物分子")
+    print(f"Total: {total_count} biomolecules")
     for biomol_type, molecules in all_biomolecules.items():
-        print(f"  - {biomol_type}: {len(molecules)} 个")
+        print(f"  - {biomol_type}: {len(molecules)}")
     
-    # 搜索每种类型的生物分子
+    # Search each type of biomolecule
     results_by_biomolecule = {}
     all_papers_list = []
     
     for biomol_type, molecules in all_biomolecules.items():
         print(f"\n{'='*60}")
-        print(f"搜索 {biomol_type.upper()}: {len(molecules)} 个")
+        print(f"Searching {biomol_type.upper()}: {len(molecules)} items")
         print('='*60)
         
         for i, biomolecule in enumerate(molecules, 1):
             try:
                 print(f"\n[{i}/{len(molecules)}] {biomolecule}...")
                 papers = scraper.search_by_protein(
-                    protein=biomolecule,  # 复用现有函数，支持任何生物分子名称
+                    protein=biomolecule,  # Reuse existing function, supports any biomolecule name
                     max_per_source=max_per_source,
                     use_flexible_query=True
                 )
                 
-                # 添加生物聚合物类型标签
+                # Add biomolecule type label
                 for paper in papers:
                     paper['target_protein'] = biomolecule
                     paper['biomolecule_type'] = biomol_type
@@ -161,26 +164,26 @@ def run_biomolecule_scraping(
                 if papers:
                     results_by_biomolecule[f"{biomol_type}:{biomolecule}"] = papers
                     all_papers_list.extend(papers)
-                    print(f"  ✅ 找到 {len(papers)} 篇文献")
+                    print(f"  Found {len(papers)} papers")
                 else:
-                    print(f"  ⚠️  未找到文献")
+                    print(f"  No papers found")
                 
             except Exception as e:
-                print(f"  ❌ 错误: {e}")
+                print(f"  Error: {e}")
                 continue
     
-    # 去重（基于DOI或标题）
-    print(f"\n去重前总数: {len(all_papers_list)}")
+    # Deduplicate (based on DOI or title)
+    print(f"\nTotal before deduplication: {len(all_papers_list)}")
     deduplicated = scraper.deduplicate_all_results(results_by_biomolecule)
-    print(f"去重后总数: {len(deduplicated)}")
+    print(f"Total after deduplication: {len(deduplicated)}")
     
-    # 按类型统计
+    # Statistics by type
     stats_by_type = {}
     for biomol_type in biomolecule_types:
         count = sum(1 for p in deduplicated if p.get('biomolecule_type') == biomol_type)
         stats_by_type[biomol_type] = count
     
-    # 保存结果（只在overwrite模式下保存，追加模式在主函数中处理）
+    # Save results (only in overwrite mode, append mode handled in main function)
     if overwrite:
         output_path = Path(output_file)
         with output_path.open('w', encoding='utf-8') as f:
@@ -197,104 +200,117 @@ def run_biomolecule_scraping(
                     }
                 }
             }, f, indent=2, ensure_ascii=False)
-        print(f"✅ 原始数据已保存到: {output_file}")
+        print(f"Raw data saved to: {output_file}")
     
-    print(f"\n✅ 抓取完成，共 {len(deduplicated)} 条文献（去重后）")
-    print(f"✅ 按类型统计:")
+    print(f"\nScraping completed: {len(deduplicated)} papers (after deduplication)")
+    print(f"Statistics by type:")
     for biomol_type, count in stats_by_type.items():
-        print(f"   - {biomol_type}: {count} 篇")
+        print(f"   - {biomol_type}: {count} papers")
     
     return deduplicated
 
 
 def run_extraction(papers: List[Dict[str, Any]], verbose: bool = False) -> List[Dict[str, Any]]:
     """
-    步骤2：NLP提取参数
+    Step 2: NLP parameter extraction
     
     Args:
-        papers: 文献列表
-        verbose: 是否显示详细输出（每条记录的提取详情和调试信息，默认False）
+        papers: List of papers
+        verbose: Whether to show detailed output (extraction details and debug info for each record, default False)
     """
     print("\n" + "="*60)
-    print("步骤 2/4: NLP参数提取")
+    print("Step 2/5: NLP Parameter Extraction")
     print("="*60)
     
-    # 设置日志级别：verbose=True时显示所有信息，False时只显示ERROR
+    # Set log level: verbose=True shows all info, False shows only ERROR
     import logging
     if verbose:
-        # 详细模式：显示所有日志
+        # Verbose mode: show all logs
         logging.getLogger('literature_mining').setLevel(logging.DEBUG)
         logging.getLogger('literature_mining.extractors').setLevel(logging.DEBUG)
         logging.getLogger('literature_mining.nlp').setLevel(logging.DEBUG)
     else:
-        # 静默模式：只显示ERROR，隐藏INFO/WARNING/DEBUG
+        # Silent mode: show only ERROR, hide INFO/WARNING/DEBUG
         logging.getLogger('literature_mining').setLevel(logging.ERROR)
         logging.getLogger('literature_mining.extractors').setLevel(logging.ERROR)
         logging.getLogger('literature_mining.nlp').setLevel(logging.ERROR)
     
     all_records = []
-    records_count = 0  # 统计提取到的记录数
-    skipped_count = 0  # 统计跳过的文献数
+    records_count = 0  # Count of extracted records
+    skipped_count = 0  # Count of skipped papers
     
     import time
     start_time = time.time()
     
-    print(f"📄 开始处理 {len(papers)} 篇文献的摘要...")
+    print(f"Starting to process abstracts from {len(papers)} papers...")
     
     for i, paper in enumerate(papers, 1):
         title = paper.get('title', '')
         abstract = paper.get('abstract', '')
-        protein_name = paper.get('target_protein', None)  # 读取 target_protein
+        protein_name = paper.get('target_protein', None)  # Read target_protein
         text = f"{title}. {abstract}"
+        
+        # Extract paper metadata
+        paper_doi = paper.get('doi', None)
+        paper_title = paper.get('title', None)
+        paper_authors = paper.get('authors', None)
+        paper_pub_year = paper.get('pub_year', None)
         
         if not text.strip():
             continue
         
         paper_start = time.time()
         
-        # 从paper中获取biomolecule_type（如果有），否则使用自动检测
+        # Get biomolecule_type from paper (if available), otherwise use auto-detection
         biomolecule_type = paper.get('biomolecule_type', 'protein')
         
         try:
             records = extract_from_text(
                 text=text,
-                biomolecule_type=biomolecule_type,  # 使用从paper中获取的类型
-                protein_name=protein_name,  # 传递生物分子名称
-                enable_quality_monitoring=False,  # 关闭质量监控以提升速度
-                auto_detect_biomolecule=True  # 自动检测类型（如果paper中没有）
+                biomolecule_type=biomolecule_type,  # Use type from paper
+                protein_name=protein_name,  # Pass biomolecule name
+                enable_quality_monitoring=False,  # Disable quality monitoring for speed
+                auto_detect_biomolecule=True  # Auto-detect type (if not in paper)
             )
         except Exception as e:
-            # 捕获验证错误等异常，继续处理下一篇文献
-            if i % 100 == 0:  # 错误信息也只在每100条打印一次
-                print(f"\n❌ 提取错误: {e}")
-                print(f"   跳过这篇文献: {title[:60]}...")
+            # Catch validation errors and other exceptions, continue with next paper
+            if i % 100 == 0:  # Error messages also only printed every 100 items
+                print(f"\nExtraction error: {e}")
+                print(f"   Skipping this paper: {title[:60]}...")
             continue
         
         paper_time = time.time() - paper_start
         
+        # Add paper metadata to each record
         if records:
+            for record in records:
+                record.source_doi = paper_doi
+                record.source_title = paper_title
+                record.source_authors = paper_authors
+                record.source_pub_year = paper_pub_year
+            
             all_records.extend(records)
             records_count += len(records)
         else:
             skipped_count += 1
         
-        # 每1000条打印一次进度
+        # Print progress every 1000 items
         if i % 1000 == 0 or i == len(papers):
             elapsed = time.time() - start_time
             avg_time = elapsed / i
             remaining = avg_time * (len(papers) - i)
             extraction_rate = (records_count / i * 100) if i > 0 else 0
-            print(f"\n📊 进度: {i}/{len(papers)} ({i/len(papers)*100:.1f}%) | "
-                  f"提取率: {extraction_rate:.1f}% ({records_count}条记录) | "
-                  f"已耗时: {elapsed:.1f}秒 | 预计剩余: {remaining/60:.1f}分钟")
+            print(f"\nProgress: {i}/{len(papers)} ({i/len(papers)*100:.1f}%) | "
+                  f"Extraction rate: {extraction_rate:.1f}% ({records_count} records) | "
+                  f"Elapsed: {elapsed:.1f}s | Estimated remaining: {remaining/60:.1f} minutes")
     
     total_papers = len(papers)
     extraction_rate = (len(all_records) / total_papers * 100) if total_papers > 0 else 0
-    print(f"\n✅ 提取完成")
-    print(f"   - 处理文献: {total_papers} 篇")
-    print(f"   - 提取记录: {len(all_records)} 条")
-    print(f"   - 提取率: {extraction_rate:.1f}% ({len(all_records)}/{total_papers})")
-    print(f"   - 跳过文献: {skipped_count} 篇（未提取到有效参数）")
+    print(f"\nExtraction completed")
+    print(f"   - Processed papers: {total_papers}")
+    print(f"   - Extracted records: {len(all_records)}")
+    print(f"   - Extraction rate: {extraction_rate:.1f}% ({len(all_records)}/{total_papers})")
+    print(f"   - Skipped papers: {skipped_count} (no valid parameters extracted)")
     
     return all_records
 
@@ -303,208 +319,276 @@ def run_storage(records: List[Dict[str, Any]],
                 store_path: str = "literature_mining/storage/structured_store.jsonl",
                 overwrite: bool = False) -> None:
     """
-    步骤3：存储到数据库
+    Step 3: Store to database
     
     Args:
-        records: 要存储的记录列表
-        store_path: 存储文件路径
-        overwrite: 是否覆盖已有文件（默认追加）
+        records: List of records to store
+        store_path: Storage file path
+        overwrite: Whether to overwrite existing file (default: append)
     """
     print("\n" + "="*60)
-    print("步骤 3/4: 存储数据")
+    print("Step 3/5: Store Data")
     print("="*60)
     
-    # 如果覆盖模式且文件存在，先删除旧文件
+    # If overwrite mode and file exists, delete old file first
     store_file = Path(store_path)
     if overwrite and store_file.exists():
         old_count = len(store_file.read_text(encoding='utf-8').strip().split('\n'))
         store_file.unlink()
-        print(f"🗑️  删除旧文件（原有 {old_count} 条记录）")
+        print(f"Deleted old file ({old_count} records)")
     
     store = StructuredStore(store_path)
     
     for record in records:
         store.add(record)
     
-    print(f"✅ 数据已存储到: {store_path}")
-    print(f"✅ 本次存储记录数: {len(records)}")
+    print(f"Data stored to: {store_path}")
+    print(f"Records stored this time: {len(records)}")
     
-    # 显示文件总记录数（如果是追加模式）
+    # Show total record count (if in append mode)
     if not overwrite and store_file.exists():
         total_lines = len(store_file.read_text(encoding='utf-8').strip().split('\n'))
         if total_lines > len(records):
-            print(f"✅ 文件总记录数: {total_lines} 条（追加模式）")
+            print(f"Total records in file: {total_lines} (append mode)")
+
+
+def run_db_import(store_path: str, incremental: bool = True) -> int:
+    """
+    Step 5: Import data to database automatically
+    
+    Args:
+        store_path: Path to structured_store.jsonl file
+        incremental: If True, only import new records (default: True)
+        
+    Returns:
+        Number of imported records
+    """
+    print("\n" + "="*60)
+    print("Step 5/5: Auto-import to Database")
+    print("="*60)
+    
+    try:
+        # Initialize database
+        init_db()
+        
+        # Create database session
+        db = SessionLocal()
+        try:
+            service = LiteratureService(db)
+            
+            if incremental:
+                print("Using incremental import mode (import new records only)...")
+                # For incremental import, we'll track which records are already in DB
+                # by checking DOI and parameter combination
+                imported_count = service.load_literature_to_db_incremental()
+            else:
+                print("Using full import mode (re-import all records)...")
+                imported_count = service.load_literature_to_db()
+            
+            print(f"Successfully imported {imported_count} records to database")
+            return imported_count
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"Database import failed: {e}")
+        print("   Data still saved in JSONL file, can be imported manually later")
+        import traceback
+        traceback.print_exc()
+        return 0
 
 
 def run_training(store_path: str = "literature_mining/storage/structured_store.jsonl",
                  model_path: str = "models/saved/stability.pkl") -> None:
-    """步骤4：训练ML模型"""
+    """Step 4: Train ML model"""
     print("\n" + "="*60)
-    print("步骤 4/4: 训练ML模型")
+    print("Step 4/5: Train ML Model")
     print("="*60)
     
-    print(f"从 {store_path} 加载数据...")
+    print(f"Loading data from {store_path}...")
     model = train_from_store(store_path, use_synth=True)
     
-    print("训练完成")
+    print("Training completed")
     
-    # 保存模型
+    # Save model
     model_file = Path(model_path)
     model_file.parent.mkdir(parents=True, exist_ok=True)
     save_model(model, model_file)
     
-    print(f"✅ 模型已保存到: {model_path}")
+    print(f"Model saved to: {model_path}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="运行完整的数据处理管道")
+    parser = argparse.ArgumentParser(description="Run complete data processing pipeline")
     
-    # 模式选择
+    # Mode selection
     parser.add_argument(
         "--mode",
         type=str,
         choices=["query", "protein", "biomolecule"],
         default="query",
-        help="抓取模式：query=通用查询，protein=基于蛋白质，biomolecule=所有生物聚合物（推荐）"
+        help="Scraping mode: query=general query, protein=protein-based, biomolecule=all biomolecules (recommended)"
     )
     
-    # 通用查询模式参数
+    # General query mode parameters
     parser.add_argument(
         "--query",
         type=str,
         default=None,
-        help="搜索查询字符串（mode=query时必需）"
+        help="Search query string (required when mode=query)"
     )
     
-    # 蛋白质模式参数
+    # Protein mode parameters
     parser.add_argument(
         "--proteins",
         type=str,
         default=None,
-        help="蛋白质列表，逗号分隔（mode=protein时可选，默认使用内置列表）"
+        help="Protein list, comma-separated (optional when mode=protein, default uses built-in list)"
     )
     
-    # 生物聚合物模式参数
+    # Biomolecule mode parameters
     parser.add_argument(
         "--biomolecule-types",
         type=str,
         default="protein,peptide,polysaccharide",
-        help="生物聚合物类型，逗号分隔（mode=biomolecule时有效）：protein,peptide,polysaccharide"
+        help="Biomolecule types, comma-separated (effective when mode=biomolecule): protein,peptide,polysaccharide"
     )
     
     parser.add_argument(
         "--max-per-source",
         type=int,
         default=300,
-        help="每个生物分子每个数据源的最大结果数（mode=protein或biomolecule时有效，默认100）"
+        help="Maximum results per biomolecule per data source (effective when mode=protein or biomolecule, default 100)"
     )
     parser.add_argument(
         "--enable-s2",
         action="store_true",
-        help="启用Semantic Scholar（默认禁用，避免限流）"
+        help="Enable Semantic Scholar (disabled by default to avoid rate limiting)"
     )
     
-    # 通用参数
+    # General parameters
     parser.add_argument(
         "--store",
         type=str,
         default="literature_mining/storage/structured_store.jsonl",
-        help="数据存储路径"
+        help="Data storage path"
     )
     parser.add_argument(
         "--model",
         type=str,
         default="models/saved/stability.pkl",
-        help="模型保存路径"
+        help="Model save path"
     )
     parser.add_argument(
         "--train",
         action="store_true",
-        help="是否训练模型"
+        help="Whether to train model"
     )
     parser.add_argument(
         "--skip-scraping",
         action="store_true",
-        help="跳过抓取步骤（使用已有的raw_papers.json）"
+        help="Skip scraping step (use existing raw_papers.json)"
     )
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="覆盖已存在的文件（raw_papers.json和structured_store.jsonl，默认追加）"
+        help="Overwrite existing files (raw_papers.json and structured_store.jsonl, default: append)"
     )
     parser.add_argument(
         "--append",
         action="store_true",
-        help="追加到已有数据（默认行为，与--overwrite互斥）"
+        help="Append to existing data (default behavior, mutually exclusive with --overwrite)"
     )
     parser.add_argument(
         "--verbose",
         action="store_true",
-        help="详细输出模式（显示每条记录的提取详情和调试信息，默认关闭）"
+        help="Verbose output mode (show extraction details and debug info for each record, default off)"
+    )
+    parser.add_argument(
+        "--auto-import-db",
+        action="store_true",
+        help="Auto-import data to database (enabled by default)"
+    )
+    parser.add_argument(
+        "--no-auto-import-db",
+        action="store_true",
+        dest="skip_db_import",
+        help="Skip auto-import to database (if --auto-import-db is enabled)"
+    )
+    parser.add_argument(
+        "--incremental-import",
+        action="store_true",
+        default=True,
+        help="Use incremental import mode (import new records only, enabled by default)"
+    )
+    parser.add_argument(
+        "--full-import",
+        action="store_true",
+        dest="full_import",
+        help="Use full import mode (re-import all records, overwrite existing data)"
     )
     
     args = parser.parse_args()
     
-    # 验证参数
+    # Validate parameters
     if args.mode == "query" and not args.query and not args.skip_scraping:
         parser.error("--query is required when --mode=query")
     
-    # 检查overwrite和append的互斥性
+    # Check mutual exclusivity of overwrite and append
     if args.overwrite and args.append:
         parser.error("--overwrite and --append cannot be used together")
     
-    # S2开关：默认关闭，只有显式启用才会打开
+    # S2 switch: disabled by default, only enabled if explicitly requested
     from literature_mining.scrapers.enhanced_scraper import ScraperConfig
     if args.enable_s2:
         ScraperConfig.S2_ENABLED = True
     else:
-        ScraperConfig.S2_ENABLED = False  # 确保默认关闭
+        ScraperConfig.S2_ENABLED = False  # Ensure disabled by default
     
-    print("\n🚀 DoE-Assist 数据处理管道")
-    print(f"模式: {args.mode}")
+    print("\nDoE-Assist Data Processing Pipeline")
+    print(f"Mode: {args.mode}")
     if args.mode == "query":
-        print(f"查询: {args.query}")
+        print(f"Query: {args.query}")
     elif args.mode == "protein":
         if args.proteins:
-            print(f"蛋白质: {args.proteins}")
+            print(f"Proteins: {args.proteins}")
         else:
-            print(f"蛋白质: 使用默认列表（~30个）")
-        print(f"每个数据源最大结果数: {args.max_per_source}")
+            print(f"Proteins: Using default list (~30)")
+        print(f"Max results per source: {args.max_per_source}")
     elif args.mode == "biomolecule":
-        print(f"生物聚合物类型: {args.biomolecule_types}")
-        print(f"每个数据源最大结果数: {args.max_per_source}")
-    print(f"Semantic Scholar: {'启用' if ScraperConfig.S2_ENABLED else '禁用（避免限流）'}")
-    print(f"存储: {args.store}")
+        print(f"Biomolecule types: {args.biomolecule_types}")
+        print(f"Max results per source: {args.max_per_source}")
+    print(f"Semantic Scholar: {'Enabled' if ScraperConfig.S2_ENABLED else 'Disabled (to avoid rate limiting)'}")
+    print(f"Storage: {args.store}")
     if args.train:
-        print(f"模型: {args.model}")
+        print(f"Model: {args.model}")
     
     try:
-        # 步骤1：抓取文献
+        # Step 1: Scrape literature
         if args.skip_scraping:
-            print("\n⏭️  跳过抓取步骤")
+            print("\nSkipping scraping step")
             raw_file = Path("raw_papers.json")
             if not raw_file.exists():
-                print(f"❌ 找不到 {raw_file}，请先运行抓取步骤")
+                print(f"File not found: {raw_file}, please run scraping step first")
                 sys.exit(1)
             with raw_file.open('r', encoding='utf-8') as f:
                 data = json.load(f)
-                # 兼容两种格式
+                # Compatible with both formats
                 if isinstance(data, dict) and 'papers' in data:
                     papers = data['papers']
                 else:
                     papers = data
         else:
-            # 确定是否覆盖已有文件
+            # Determine whether to overwrite existing file
             overwrite_mode = args.overwrite or (not args.append and not Path("raw_papers.json").exists())
             
             if args.mode == "biomolecule":
-                # 生物聚合物模式（支持蛋白质、肽、多糖）
+                # Biomolecule mode (supports proteins, peptides, polysaccharides)
                 biomolecule_types = [t.strip() for t in args.biomolecule_types.split(',')]
                 
-                # 如果追加模式且文件存在，先读取已有数据
+                # If append mode and file exists, read existing data first
                 existing_papers = []
                 if not overwrite_mode and Path("raw_papers.json").exists():
-                    print("\n📂 检测到已有文献数据，将追加新数据")
+                    print("\nExisting literature data detected, will append new data")
                     try:
                         with Path("raw_papers.json").open('r', encoding='utf-8') as f:
                             existing_data = json.load(f)
@@ -513,7 +597,7 @@ def main():
                             elif isinstance(existing_data, list):
                                 existing_papers = existing_data
                     except Exception as e:
-                        print(f"⚠️  读取已有数据时出错: {e}，将创建新文件")
+                        print(f"Error reading existing data: {e}, will create new file")
                 
                 papers = run_biomolecule_scraping(
                     biomolecule_types=biomolecule_types,
@@ -523,15 +607,15 @@ def main():
                     overwrite=overwrite_mode
                 )
                 
-                # 如果是追加模式，合并已有数据并保存
+                # If append mode, merge existing data and save
                 if not overwrite_mode and existing_papers:
-                    # 基于DOI去重
+                    # Deduplicate based on DOI
                     existing_dois = {p.get('doi') for p in existing_papers if p.get('doi')}
                     new_papers = [p for p in papers if p.get('doi') not in existing_dois]
                     papers = existing_papers + new_papers
-                    print(f"✅ 合并完成：已有 {len(existing_papers)} 篇，新增 {len(new_papers)} 篇，总计 {len(papers)} 篇")
+                    print(f"Merging completed: {len(existing_papers)} existing, {len(new_papers)} new, {len(papers)} total")
                     
-                    # 保存合并后的数据
+                    # Save merged data
                     output_path = Path("raw_papers.json")
                     with output_path.open('w', encoding='utf-8') as f:
                         json.dump({
@@ -542,50 +626,60 @@ def main():
                                 'new_count': len(new_papers)
                             }
                         }, f, indent=2, ensure_ascii=False)
-                    print(f"✅ 合并后的数据已保存到: raw_papers.json")
+                    print(f"Merged data saved to: raw_papers.json")
             elif args.mode == "protein":
-                # 蛋白质模式
+                # Protein mode
                 protein_list = args.proteins.split(',') if args.proteins else None
                 papers = run_protein_scraping(
                     proteins=protein_list,
                     max_per_source=args.max_per_source
                 )
             else:
-                # 查询模式
+                # Query mode
                 papers = run_scraping(args.query)
         
         if not papers:
-            print("❌ 没有找到文献，退出")
+            print("No literature found, exiting")
             sys.exit(1)
         
-        # 步骤2：NLP提取
+        # Step 2: NLP extraction
         records = run_extraction(papers, verbose=getattr(args, 'verbose', False))
         
         if not records:
-            print("❌ 没有提取到有效记录，退出")
+            print("No valid records extracted, exiting")
             sys.exit(1)
         
-        # 步骤3：存储
-        # 如果使用--overwrite，也覆盖structured_store.jsonl
+        # Step 3: Storage
+        # If using --overwrite, also overwrite structured_store.jsonl
         store_overwrite = getattr(args, 'overwrite', False)
         run_storage(records, args.store, overwrite=store_overwrite)
         
-        # 步骤4：训练模型（可选）
+        # Step 4: Train model (optional)
         if args.train:
             run_training(args.store, args.model)
         
+        # Step 5: Auto-import to database (enabled by default)
+        imported_count = 0
+        if getattr(args, 'auto_import_db', True) and not getattr(args, 'skip_db_import', False):
+            incremental = getattr(args, 'incremental_import', True) and not getattr(args, 'full_import', False)
+            imported_count = run_db_import(args.store, incremental=incremental)
+        else:
+            print("\nSkipping database import step")
+        
         print("\n" + "="*60)
-        print("🎉 管道运行完成！")
+        print("Pipeline completed!")
         print("="*60)
-        print(f"✅ 文献数: {len(papers)}")
-        print(f"✅ 提取记录数: {len(records)}")
-        print(f"✅ 数据存储: {args.store}")
+        print(f"Papers: {len(papers)}")
+        print(f"Extracted records: {len(records)}")
+        print(f"Data storage: {args.store}")
+        if imported_count > 0:
+            print(f"Database import: {imported_count} records")
         if args.train:
-            print(f"✅ 模型: {args.model}")
+            print(f"Model: {args.model}")
         print()
         
     except Exception as e:
-        print(f"\n❌ 错误: {e}")
+        print(f"\nError: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
@@ -593,4 +687,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

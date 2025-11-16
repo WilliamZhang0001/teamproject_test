@@ -7,7 +7,11 @@ import sys
 from pathlib import Path
 
 # Add project root to path
-project_root = Path(__file__).parent.parent.parent.parent
+# In Docker, use /workspace if it exists; otherwise calculate relative to __file__
+if Path("/workspace").exists():
+    project_root = Path("/workspace")
+else:
+    project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from backend.app.repos import literature_repo, user_experiment_repo
@@ -80,9 +84,17 @@ class ExperimentService:
         # 4. Save to database (if user_id is provided)
         if user_id is not None:
             print(f"DEBUG: Saving classification record for user_id={user_id}")
-            self._save_experiment_record(user_id, user_input, result, 'classification')
+            print(f"DEBUG: user_input keys: {list(user_input.keys())}")
+            print(f"DEBUG: user_input values - biomolecule_type: {user_input.get('biomolecule_type')}, biomolecule_name: {user_input.get('biomolecule_name')}")
+            try:
+                self._save_experiment_record(user_id, user_input, result, 'classification')
+            except Exception as save_error:
+                print(f"ERROR: Exception during save: {save_error}")
+                import traceback
+                traceback.print_exc()
         else:
-            print("DEBUG: user_id is None, skipping record save")
+            print("WARNING: user_id is None, skipping record save. User may not be authenticated.")
+            print("WARNING: Check if Authorization header is being sent from frontend.")
         
         return result
     
@@ -105,13 +117,74 @@ class ExperimentService:
         Returns:
             Prediction result
         """
-        # 1. Call ML model for parameter recommendations
-        ml_result = self._call_ml_model_for_recommendation(user_input, request_params)
+        # Separate parameters into provided and need_prediction
+        provided_params = []
+        need_prediction_params = []
+        
+        for param in request_params:
+            # Check if parameter is already provided in user_input
+            param_value = user_input.get(param)
+            if param_value is not None and param_value != '':
+                # Parameter is already provided
+                provided_params.append(param)
+            else:
+                # Parameter needs to be predicted
+                need_prediction_params.append(param)
+        
+        # 1. Call ML model for parameter recommendations (only for parameters that need prediction)
+        if need_prediction_params:
+            ml_result = self._call_ml_model_for_recommendation(user_input, need_prediction_params)
+        else:
+            ml_result = {'predicted_parameters': {}, 'confidence': 1.0, 'model_info': {}}
         
         # 2. Search similar literature
         similar_literature = self._search_similar_literature(user_input, top_k)
         
-        # 3. Build complete result
+        # 3. Build predicted_parameters dict, including provided parameters
+        # Use OrderedDict to maintain order: provided params first, then predicted params
+        from collections import OrderedDict
+        predicted_parameters = OrderedDict()
+        
+        # Add provided parameters with "already_provided" status (display first)
+        param_display_names = {
+            'pH': 'pH',
+            'temperature_c': 'Temperature',
+            'concentration_mg_ml': 'Concentration',
+            'ionic_strength_mM': 'Ionic Strength',
+            'additive': 'Additive',
+            'time_min': 'Time',
+            'shear_rate_s1': 'Shear Rate',
+            'pressure_bar': 'Pressure'
+        }
+        
+        # If there are provided parameters, create a single entry listing all of them
+        if provided_params:
+            # Get display names for all provided parameters
+            provided_display_names = [param_display_names.get(param, param) for param in provided_params]
+            # Create comma-separated message
+            if len(provided_display_names) == 1:
+                message = f'{provided_display_names[0]} already provided'
+            else:
+                message = f'{", ".join(provided_display_names)} already provided'
+            
+            # Store all provided parameters with their values
+            provided_values = {}
+            for param in provided_params:
+                provided_values[param] = user_input.get(param)
+            
+            # Create a single entry for all provided parameters
+            predicted_parameters['_provided_params'] = {
+                'status': 'already_provided',
+                'message': message,
+                'provided_params': provided_params,
+                'provided_values': provided_values,
+                'source': 'user_input'
+            }
+        
+        # Add predicted parameters (display after provided ones)
+        predicted_parameters.update(ml_result.get('predicted_parameters', {}))
+        
+        # 4. Build complete result
         property_value = user_input.get('property') or user_input.get('experiment_type', 'stability')
         result = {
             'biomolecule_type': user_input.get('biomolecule_type'),
@@ -119,7 +192,7 @@ class ExperimentService:
             'property': property_value,
             'experiment_type': property_value,
             'input_parameters': self._extract_input_params(user_input),
-            'predicted_parameters': ml_result.get('predicted_parameters', {}),
+            'predicted_parameters': predicted_parameters,
             'confidence': ml_result.get('confidence', 0.0),
             'similar_literature': similar_literature,
             'model_info': ml_result.get('model_info', {})
@@ -128,9 +201,17 @@ class ExperimentService:
         # 4. Save to database (if user_id is provided)
         if user_id is not None:
             print(f"DEBUG: Saving parameter prediction record for user_id={user_id}")
-            self._save_experiment_record(user_id, user_input, result, 'parameter_prediction')
+            print(f"DEBUG: user_input keys: {list(user_input.keys())}")
+            print(f"DEBUG: user_input values - biomolecule_type: {user_input.get('biomolecule_type')}, biomolecule_name: {user_input.get('biomolecule_name')}")
+            try:
+                self._save_experiment_record(user_id, user_input, result, 'parameter_prediction')
+            except Exception as save_error:
+                print(f"ERROR: Exception during save: {save_error}")
+                import traceback
+                traceback.print_exc()
         else:
-            print("DEBUG: user_id is None, skipping record save")
+            print("WARNING: user_id is None, skipping record save. User may not be authenticated.")
+            print("WARNING: Check if Authorization header is being sent from frontend.")
         
         return result
     
@@ -321,6 +402,14 @@ class ExperimentService:
     ):
         """Save experiment record to database"""
         try:
+            # Validate required fields before saving
+            if not user_input.get('biomolecule_type'):
+                print(f"WARNING: biomolecule_type is missing, cannot save record")
+                return
+            if not user_input.get('biomolecule_name'):
+                print(f"WARNING: biomolecule_name is missing, cannot save record")
+                return
+                
             record_data = {
                 'user_id': user_id,
                 'biomolecule_type': user_input.get('biomolecule_type'),
@@ -340,10 +429,12 @@ class ExperimentService:
                 'recommended_literature': result.get('similar_literature', [])
             }
             
+            print(f"DEBUG: Attempting to save experiment record for user_id={user_id}, type={prediction_type}")
             record = user_experiment_repo.create_experiment_record(self.db, record_data)
             print(f"DEBUG: Successfully saved experiment record with id={record.id}")
         except Exception as e:
-            print(f"Warning: Failed to save experiment record: {e}")
+            print(f"ERROR: Failed to save experiment record: {e}")
             import traceback
             traceback.print_exc()
+            # Don't raise exception - just log it so prediction can still return
 

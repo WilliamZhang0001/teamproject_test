@@ -1,6 +1,6 @@
 """
-文献数据库模型
-存储从文献中提取的实验参数信息
+Literature database models
+Stores experimental parameter information extracted from literature
 """
 from datetime import datetime
 from typing import Optional
@@ -10,7 +10,7 @@ from backend.app.core.db import Base
 
 
 class Literature(Base):
-    """文献表"""
+    """Literature table"""
     __tablename__ = "literature"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -21,19 +21,17 @@ class Literature(Base):
     source: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     
-    # 关联到提取记录
     extraction_records: Mapped[list["ExtractionRecord"]] = relationship(
         "ExtractionRecord", back_populates="literature", cascade="all, delete-orphan"
     )
 
 
 class ExtractionRecord(Base):
-    """文献提取记录表 - 存储实验参数和结果"""
+    """Literature extraction record table - stores experimental parameters and results"""
     __tablename__ = "extraction_records"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     
-    # 文献关联
     literature_id: Mapped[Optional[int]] = mapped_column(
         Integer, 
         ForeignKey("literature.id"), 
@@ -41,13 +39,11 @@ class ExtractionRecord(Base):
         index=True
     )
     
-    # 生物分子信息
     biomolecule_type: Mapped[str] = mapped_column(String(64), nullable=False, default="protein", index=True)
     protein_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     polarity: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     property: Mapped[str] = mapped_column(String(64), nullable=False, default="stability")
     
-    # 实验参数
     pH: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     temperature_c: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     concentration_mg_ml: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
@@ -57,28 +53,24 @@ class ExtractionRecord(Base):
     shear_rate_s1: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     pressure_bar: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     
-    # 结果信息
     outcome_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     outcome_label: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     outcome_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     source_section: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     
-    # 元数据
     confidence: Mapped[float] = mapped_column(Float, nullable=False, default=0.5, index=True)
     raw_context: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
-    # 存储完整的JSON数据用于检索
     full_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     
-    # 关联到文献
     literature: Mapped[Optional["Literature"]] = relationship(
         "Literature", back_populates="extraction_records"
     )
     
     def to_dict(self) -> dict:
-        """转换为字典格式"""
+        """Convert to dictionary format, including literature_id for deduplication"""
         return {
             'id': self.id,
             'literature_id': self.literature_id,

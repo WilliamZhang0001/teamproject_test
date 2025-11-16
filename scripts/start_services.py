@@ -15,7 +15,7 @@ class ServiceManager:
         
     def start_service(self, name, command, cwd=None):
         """Start a service"""
-        print(f"🚀 Starting {name}...")
+        print(f"Starting {name}...")
         try:
             process = subprocess.Popen(
                 command,
@@ -26,36 +26,34 @@ class ServiceManager:
                 preexec_fn=os.setsid if os.name != 'nt' else None
             )
             self.processes.append((name, process))
-            print(f"✅ {name} started (PID: {process.pid})")
+            print(f"{name} started (PID: {process.pid})")
             return process
         except Exception as e:
-            print(f"❌ Failed to start {name}: {e}")
+            print(f"Failed to start {name}: {e}")
             return None
     
     def stop_all_services(self):
         """Stop all services"""
-        print("\n🛑 Stopping all services...")
+        print("\nStopping all services...")
         for name, process in self.processes:
             try:
                 if os.name == 'nt':
                     process.terminate()
                 else:
                     os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-                print(f"✅ {name} stopped")
+                print(f"{name} stopped")
             except Exception as e:
-                print(f"❌ Failed to stop {name}: {e}")
+                print(f"Failed to stop {name}: {e}")
     
     def start_all_services(self):
         """Start all services"""
-        print("🚀 Starting all DoE-Assist services...")
+        print("Starting all DoE-Assist services...")
         print("=" * 50)
         
-        # Check dependencies
         if not Path("requirements.txt").exists():
-            print("❌ requirements.txt not found, please run setup_project.py first")
+            print("requirements.txt not found, please run setup_project.py first")
             return
         
-        # Start backend API service
         self.start_service(
             "Backend API Service",
             "uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000",
@@ -63,7 +61,6 @@ class ServiceManager:
         )
         time.sleep(2)
         
-        # Start literature mining service
         self.start_service(
             "Literature Mining Service", 
             "python -m literature_mining.api --host 0.0.0.0 --port 8001",
@@ -71,7 +68,6 @@ class ServiceManager:
         )
         time.sleep(2)
         
-        # Start machine learning service
         self.start_service(
             "Machine Learning Service",
             "python -m ml_engine.api --host 0.0.0.0 --port 8002", 
@@ -79,7 +75,6 @@ class ServiceManager:
         )
         time.sleep(2)
         
-        # Start frontend service (if exists)
         if Path("frontend/package.json").exists():
             self.start_service(
                 "Frontend Service",
@@ -87,14 +82,14 @@ class ServiceManager:
                 cwd="frontend"
             )
         
-        print("\n✅ All services started successfully!")
+        print("\nAll services started successfully!")
         print("=" * 50)
         print("Service URLs:")
-        print("🌐 Frontend Interface: http://localhost:3000")
-        print("🔧 Backend API: http://localhost:8000")
-        print("📚 Literature Mining API: http://localhost:8001") 
-        print("🤖 Machine Learning API: http://localhost:8002")
-        print("📖 API Documentation: http://localhost:8000/docs")
+        print("Frontend Interface: http://localhost:3000")
+        print("Backend API: http://localhost:8000")
+        print("Literature Mining API: http://localhost:8001") 
+        print("Machine Learning API: http://localhost:8002")
+        print("API Documentation: http://localhost:8000/docs")
         print("\nPress Ctrl+C to stop all services")
 
 def signal_handler(signum, frame):
@@ -122,7 +117,7 @@ def main():
     except KeyboardInterrupt:
         signal_handler(signal.SIGINT, None)
     except Exception as e:
-        print(f"❌ Error starting services: {e}")
+        print(f"Error starting services: {e}")
         service_manager.stop_all_services()
 
 if __name__ == "__main__":

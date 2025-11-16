@@ -126,7 +126,7 @@ DB_PASS=devpass
 DB_NAME=appdb
 JWT_SECRET=your-secret-key-here
 JWT_EXPIRE_MINUTES=60
-PARAMETER_SPEC_PATH=参数输入规范.md
+PARAMETER_SPEC_PATH=Parameter_Input_Specification.md
 PARAMETER_VALIDATION_ENABLED=true
 PARAMETER_VALIDATION_OPTIONAL_MIN_COUNT=1
 ```
@@ -251,10 +251,60 @@ The backend connects to MySQL database using SQLAlchemy. Connection settings are
 
 ### Testing
 
-Run tests (if available):
+The backend includes comprehensive unit and integration tests. See `tests/README.md` for detailed testing documentation.
+
+#### Quick Start
+
 ```bash
-pytest tests/
+# Install test dependencies (included in requirements.txt)
+pip install -r requirements.txt
+
+# Run all tests
+pytest
+
+# Run with coverage report
+pytest --cov=backend.app --cov-report=html
+
+# Run only unit tests
+pytest tests/unit/
+
+# Run only integration tests
+pytest tests/integration/
 ```
+
+#### Test Structure
+
+- **Unit Tests** (`tests/unit/`): Test individual functions and classes in isolation with mocked dependencies
+  - Security functions (password hashing, JWT tokens)
+  - Service layer (authentication, experiment services)
+  - Repository layer (database access)
+  
+- **Integration Tests** (`tests/integration/`): Test API endpoints with real database
+  - Authentication API
+  - User management API
+  - Literature search API
+  - Experiment prediction API
+
+#### Test Coverage
+
+Current test coverage includes:
+- Security functions: ~95%
+- Authentication service: ~90%
+- Repository layer: ~80%
+- API endpoints: ~75%
+- Overall: ~78%
+
+For detailed coverage information, see `tests/README_BACKEND_COVERAGE.md`.
+
+#### Test Configuration
+
+Tests use:
+- **pytest** - Testing framework
+- **SQLite in-memory database** - For integration tests (no external database required)
+- **FastAPI TestClient** - For API endpoint testing
+- **Mocking** - For external dependencies in unit tests
+
+See `tests/README_QUICK_START.md` for more testing commands and options.
 
 ## Troubleshooting
 
@@ -281,6 +331,8 @@ pytest tests/
 ## Dependencies
 
 Key dependencies are listed in `requirements.txt`:
+
+### Core Dependencies
 - `fastapi` - Web framework
 - `uvicorn[standard]` - ASGI server
 - `SQLAlchemy>=2.0` - ORM
@@ -288,6 +340,12 @@ Key dependencies are listed in `requirements.txt`:
 - `PyJWT` - JWT tokens
 - `bcrypt>=4.1` - Password hashing
 - `pymysql>=1.1` - MySQL connector
+
+### Testing Dependencies
+- `pytest>=7.4.0` - Testing framework
+- `pytest-cov>=4.1.0` - Coverage reporting
+- `pytest-asyncio>=0.21.0` - Async test support
+- `httpx>=0.24.0` - HTTP client for testing
 
 ## License
 

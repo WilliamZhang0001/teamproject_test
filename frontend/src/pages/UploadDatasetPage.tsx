@@ -280,8 +280,9 @@ const UploadDatasetPage: React.FC = () => {
               <Typography variant="body2" component="div">
                 <ul style={{ margin: 0, paddingLeft: 20 }}>
                   <li>Must include header row</li>
-                  <li>Classification prediction columns: Substance Category, Substance Name, Property/Experiment Type</li>
-                  <li>Optional columns: pH, Temperature, Concentration, Ion Concentration, Time, Additives, Shear Rate, Pressure</li>
+                  <li>Required columns (must be filled, values must be lowercase): Substance Category, Substance Name, Property</li>
+                  <li>Supported values: Substance Category (protein, peptide, polysaccharide), Property (stability, solubility, aggregation)</li>
+                  <li>Optional columns: pH, Temperature, Concentration, Ion Concentration, Additives, Time, Shear Rate, Pressure</li>
                   <li>All numeric values should be in number format</li>
                 </ul>
               </Typography>
@@ -352,10 +353,10 @@ const UploadDatasetPage: React.FC = () => {
             </Divider>
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                Please refer to the following example format or contact technical support
+                Please refer to the requirements or contact technical support
               </Typography>
               <Chip
-                label="CSV Format Example: Substance Category, Substance Name, Property, pH, Temperature"
+                label="Please enter the parameters in the order specified by the requirements; each line represents one experiment."
                 sx={{ mt: 1 }}
               />
             </Box>

@@ -1,0 +1,11 @@
+Substance Category,Substance Name,Property,Experiment Type,pH,Temperature,Concentration,Ion Concentration,Time,Additives,Shear Rate,Pressure
+protein,lysozyme,stability,stability,7.0,25.0,10.0,150.0,60.0,glycerol,100.0,1.0
+protein,lysozyme,stability,stability,6.5,98.0,0.2,,30.0,arginine,,
+protein,insulin,stability,stability,7.4,37.0,5.0,100.0,,,,
+protein,albumin,stability,stability,7.0,4.0,50.0,,,sucrose,,
+peptide,angiotensin,stability,stability,3.0,25.0,1.0,50.0,120.0,,
+protein,lysozyme,stability,stability,4.0,,800.0,,,,
+protein,lysozyme,stability,stability,7.0,65.0,,50.0,,glycerol,,
+protein,insulin,stability,stability,8.0,25.0,2.5,200.0,180.0,trehalose,50.0,
+protein,albumin,stability,stability,6.8,40.0,100.0,300.0,,,500.0,
+

@@ -18,8 +18,9 @@ class AppUser(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     last_login_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    
-    # 关联到实验记录
+
     experiment_records: Mapped[list["UserExperimentRecord"]] = relationship(
-        "UserExperimentRecord", back_populates="user", cascade="all, delete-orphan"
+        "UserExperimentRecord",
+        back_populates="user",
+        cascade="all, delete-orphan"
     )

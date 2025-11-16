@@ -21,7 +21,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  Snackbar
 } from '@mui/material';
 import {
   History as HistoryIcon,
@@ -32,7 +33,8 @@ import {
   Close as CloseIcon,
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
-  ExpandMore as ExpandMoreIcon
+  ExpandMore as ExpandMoreIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import {
   Accordion,
@@ -48,6 +50,11 @@ const ResultsDisplayPage: React.FC = () => {
   const [history, setHistory] = useState<ExperimentHistory[]>([]);
   const [selectedExperiment, setSelectedExperiment] = useState<ExperimentHistory | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
 
   useEffect(() => {
     loadHistory();
@@ -133,14 +140,51 @@ const ResultsDisplayPage: React.FC = () => {
 
   const stats = calculateStats(history);
 
+  const handleDeleteAll = async () => {
+    setDeleting(true);
+    setError('');
+    try {
+      const result = await experimentService.deleteHistory();
+      setHistory([]);
+      setDeleteDialogOpen(false);
+      // Show success message using Snackbar
+      setSnackbarMessage(`Successfully deleted ${result.deleted_count} experiment record(s)`);
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+    } catch (err: any) {
+      const errorMsg = err.message || 'Failed to delete history';
+      setError(errorMsg);
+      setSnackbarMessage(errorMsg);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <Box>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Experiment History
-      </Typography>
-      <Typography variant="body1" paragraph color="text.secondary">
-        View and manage your experimental prediction history
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Box>
+          <Typography variant="h4" component="h1" gutterBottom>
+            Experiment History
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            View and manage your experimental prediction history
+          </Typography>
+        </Box>
+        {history.length > 0 && (
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={() => setDeleteDialogOpen(true)}
+            sx={{ ml: 2 }}
+          >
+            Clear All Data
+          </Button>
+        )}
+      </Box>
 
       {/* Statistics Cards */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -528,39 +572,152 @@ const ResultsDisplayPage: React.FC = () => {
                     <Typography variant="h6" gutterBottom>
                       Similar Literature References ({similarLit.length})
                     </Typography>
-                    {similarLit.map((lit: LiteratureRecord, idx: number) => (
-                      <Accordion key={lit.id || idx} sx={{ mt: 1 }}>
-                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                          <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Box>
-                              <Typography variant="subtitle1" noWrap>
-                                {lit.literature?.title || `Literature Record #${lit.id}`}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {lit.literature?.authors && lit.literature?.pub_year
-                                  ? `${lit.literature.authors} • ${lit.literature.pub_year}`
-                                  : lit.literature?.authors
-                                  ? lit.literature.authors
-                                  : lit.literature?.pub_year
-                                  ? `Year: ${lit.literature.pub_year}`
-                                  : 'No metadata available'}
-                              </Typography>
+                    {similarLit.map((lit: LiteratureRecord, idx: number) => {
+                      // Get literature metadata (support both top-level and nested structure)
+                      const title = lit.title || lit.literature?.title;
+                      const authors = lit.authors || lit.literature?.authors;
+                      const pubYear = lit.pub_year || lit.literature?.pub_year;
+                      const doi = lit.doi || lit.literature?.doi;
+                      
+                      return (
+                        <Accordion key={lit.id || idx} sx={{ mt: 1 }}>
+                          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                            <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pr: 1 }}>
+                              <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography 
+                                  variant="subtitle1" 
+                                  sx={{ 
+                                    fontWeight: 600,
+                                    color: 'primary.main',
+                                    mb: 0.5,
+                                    wordBreak: 'break-word',
+                                    overflowWrap: 'break-word',
+                                    hyphens: 'auto',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                  }}
+                                >
+                                  {title || `Literature Record #${lit.id}`}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {authors && pubYear
+                                    ? `${authors} • ${pubYear}`
+                                    : authors
+                                    ? authors
+                                    : pubYear
+                                    ? `Year: ${pubYear}`
+                                    : 'No metadata available'}
+                                </Typography>
+                              </Box>
+                              <Chip
+                                label={`Similarity: ${(lit.similarity_score * 100).toFixed(1)}%`}
+                                color="primary"
+                                size="small"
+                                sx={{ ml: 2, flexShrink: 0 }}
+                              />
                             </Box>
-                            <Chip
-                              label={`Similarity: ${(lit.similarity_score * 100).toFixed(1)}%`}
-                              color="primary"
-                              size="small"
-                              sx={{ ml: 2 }}
-                            />
-                          </Box>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                          <Box>
-                            {lit.literature?.doi && (
-                              <Typography variant="body2" sx={{ mb: 2 }}>
-                                <strong>DOI:</strong> {lit.literature.doi}
-                              </Typography>
-                            )}
+                          </AccordionSummary>
+                          <AccordionDetails>
+                            <Box>
+                              {/* Literature Metadata Section */}
+                              {(authors || pubYear || doi) && (
+                                <Box 
+                                  sx={{ 
+                                    mb: 2, 
+                                    p: 1.5, 
+                                    bgcolor: 'grey.50', 
+                                    borderRadius: 1, 
+                                    border: '1px solid', 
+                                    borderColor: 'grey.200' 
+                                  }}
+                                >
+                                  <Grid container spacing={1.5}>
+                                    {authors && (
+                                      <Grid item xs={12} sm={pubYear || doi ? 6 : 12}>
+                                        <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                                          <Typography 
+                                            variant="caption" 
+                                            sx={{ 
+                                              fontWeight: 'bold', 
+                                              color: 'text.secondary',
+                                              minWidth: '60px',
+                                              mr: 1
+                                            }}
+                                          >
+                                            Authors:
+                                          </Typography>
+                                          <Typography 
+                                            variant="body2" 
+                                            sx={{ 
+                                              color: 'text.primary',
+                                              wordBreak: 'break-word'
+                                            }}
+                                          >
+                                            {authors}
+                                          </Typography>
+                                        </Box>
+                                      </Grid>
+                                    )}
+                                    {pubYear && (
+                                      <Grid item xs={12} sm={authors && doi ? 3 : 6}>
+                                        <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                                          <Typography 
+                                            variant="caption" 
+                                            sx={{ 
+                                              fontWeight: 'bold', 
+                                              color: 'text.secondary',
+                                              minWidth: '50px',
+                                              mr: 1
+                                            }}
+                                          >
+                                            Year:
+                                          </Typography>
+                                          <Typography variant="body2" color="text.primary">
+                                            {pubYear}
+                                          </Typography>
+                                        </Box>
+                                      </Grid>
+                                    )}
+                                    {doi && (
+                                      <Grid item xs={12} sm={authors && pubYear ? 3 : authors || pubYear ? 6 : 12}>
+                                        <Box sx={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                                          <Typography 
+                                            variant="caption" 
+                                            sx={{ 
+                                              fontWeight: 'bold', 
+                                              color: 'text.secondary',
+                                              minWidth: '45px',
+                                              mr: 1
+                                            }}
+                                          >
+                                            DOI:
+                                          </Typography>
+                                          <Typography 
+                                            variant="body2" 
+                                            component="a"
+                                            href={doi.startsWith('http') ? doi : `https://doi.org/${doi}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            sx={{ 
+                                              color: 'primary.main',
+                                              textDecoration: 'none',
+                                              '&:hover': {
+                                                textDecoration: 'underline'
+                                              },
+                                              wordBreak: 'break-word'
+                                            }}
+                                          >
+                                            {doi}
+                                          </Typography>
+                                        </Box>
+                                      </Grid>
+                                    )}
+                                  </Grid>
+                                </Box>
+                              )}
                             {lit.parameters && (
                               <Box sx={{ mb: 2 }}>
                                 <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
@@ -621,7 +778,8 @@ const ResultsDisplayPage: React.FC = () => {
                           </Box>
                         </AccordionDetails>
                       </Accordion>
-                    ))}
+                    );
+                    })}
                   </Box>
                 )}
               </Box>
@@ -632,6 +790,63 @@ const ResultsDisplayPage: React.FC = () => {
           <Button onClick={handleCloseDialog}>Close</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => !deleting && setDeleteDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <DeleteIcon sx={{ color: 'error.main', mr: 1 }} />
+            Confirm Delete All Data
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" paragraph>
+            Are you sure you want to delete all your experiment records? This action cannot be undone.
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            You have {history.length} experiment record(s) that will be permanently deleted.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            disabled={deleting}
+            color="inherit"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteAll}
+            disabled={deleting}
+            color="error"
+            variant="contained"
+            startIcon={deleting ? <CircularProgress size={20} /> : <DeleteIcon />}
+          >
+            {deleting ? 'Deleting...' : 'Delete All'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Success/Error Snackbar */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

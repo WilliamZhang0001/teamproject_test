@@ -1,22 +1,80 @@
-# Scripts 目录
+# Scripts Directory
 
-## 核心脚本
+## Core Scripts
 
-### 项目管理
-- `setup_project.py` - 项目初始化脚本
-- `start_services.py` - 启动所有服务
+### Project Management
+- `setup_project.py` - Project initialization script
+- `start_services.py` - Start all services
 
-### 模型训练
-- `train_model.py` - 训练ML模型的统一脚本
+### Model Training
+- `train_multi_models.py` - Train multiple ML models (RF, XGBoost, LightGBM)
+- `train_by_experiment_type.py` - Train models by experiment type
+- `train_dual_track_system.py` - Train dual-track system models
 
-### 数据处理
-- `run_pipeline.py` - 运行完整的数据处理管道（文献抓取 → NLP提取 → ML训练）
+### Data Processing
+- `run_pipeline.py` - Run complete data processing pipeline (literature scraping → NLP extraction → ML training)
+- `generate_iqr_statistics.py` - Generate IQR statistics for parameter recommendation
 
-### 质量分析
-- `analyze_quality.py` - 统一的数据质量分析工具
+### Quality Analysis
+- `analyze_quality.py` - Unified data quality analysis tool
 
-## 已弃用（可删除）
-以下脚本为调试用途，可以安全删除：
+### Docker Management
+- `start_docker.py` - Start Docker services (cross-platform)
+- `start_docker.bat` - Start Docker services (Windows batch)
+- `start_docker.ps1` - Start Docker services (PowerShell)
+
+### Recommendation
+- `run_recommendation.py` - Run parameter recommendation system
+
+## Usage
+
+### Initialize Project
+```bash
+python scripts/setup_project.py
+```
+
+### Train Models
+```bash
+# Train multiple models
+python scripts/train_multi_models.py --experiment-type stability --mode classification
+
+# Train by experiment type
+python scripts/train_by_experiment_type.py --experiment-type stability
+
+# Train dual-track system
+python scripts/train_dual_track_system.py
+```
+
+### Run Complete Pipeline
+```bash
+python scripts/run_pipeline.py --query "protein stability pH temperature"
+```
+
+### Analyze Data Quality
+```bash
+python scripts/analyze_quality.py --input literature_mining/storage/structured_store.jsonl
+```
+
+### Generate IQR Statistics
+```bash
+python scripts/generate_iqr_statistics.py
+```
+
+### Start Docker Services
+```bash
+# Cross-platform (Python)
+python scripts/start_docker.py
+
+# Windows
+scripts/start_docker.bat
+
+# PowerShell
+scripts/start_docker.ps1
+```
+
+## Deprecated Scripts
+
+The following scripts are for debugging purposes and can be safely deleted:
 - `debug_regex.py`
 - `debug_full.py`
 - `debug_sentences.py`
@@ -25,27 +83,20 @@
 - `test_extractor.py`
 - `analyze_extraction_limits.py`
 - `check_project.py`
-- `run_closed_loop*.py` (所有closed loop脚本)
+- `run_closed_loop*.py` (all closed loop scripts)
 
-## 使用方法
+## Script Organization
 
-### 初始化项目
-```bash
-python scripts/setup_project.py
-```
+Scripts are organized by functionality:
+- **Training scripts**: Model training and evaluation
+- **Processing scripts**: Data processing and transformation
+- **Analysis scripts**: Data quality analysis and statistics
+- **Management scripts**: Project setup and service management
+- **Docker scripts**: Docker service management
 
-### 训练模型
-```bash
-python scripts/train_model.py --store literature_mining/storage/structured_store.jsonl --out models/saved/stability.pkl
-```
+## Notes
 
-### 运行完整管道
-```bash
-python scripts/run_pipeline.py --query "protein stability pH temperature"
-```
-
-### 分析数据质量
-```bash
-python scripts/analyze_quality.py --input literature_mining/storage/structured_store.jsonl
-```
-
+- All scripts should be run from the project root directory
+- Check script dependencies before running
+- Use virtual environment for Python scripts
+- Docker scripts require Docker and Docker Compose to be installed

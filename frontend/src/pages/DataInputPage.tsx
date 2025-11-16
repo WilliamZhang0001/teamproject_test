@@ -46,6 +46,7 @@ const DataInputPage: React.FC = () => {
   const [shearRate, setShearRate] = useState<number | ''>('');
   const [pressure, setPressure] = useState<number | ''>('');
   const [limit, setLimit] = useState(5);
+  const [limitError, setLimitError] = useState<string>('');
   
   // Field-level validation errors
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
@@ -56,6 +57,14 @@ const DataInputPage: React.FC = () => {
       return;
     }
 
+    // Validate limit: must be between 1 and 10
+    if (limit < 1 || limit > 10) {
+      setLimitError('Number of results must be between 1 and 10');
+      setError('Number of results must be between 1 and 10');
+      return;
+    }
+
+    setLimitError('');
     setError('');
     setLoading(true);
 
@@ -183,10 +192,10 @@ const DataInputPage: React.FC = () => {
 
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
-              <InputLabel>Property Type</InputLabel>
+              <InputLabel>Experiment Type</InputLabel>
               <Select
                 value={propertyType}
-                label="Property Type"
+                label="Experiment Type"
                 onChange={(e) => setPropertyType(e.target.value)}
               >
                 <MenuItem value="stability">Stability</MenuItem>
@@ -197,19 +206,75 @@ const DataInputPage: React.FC = () => {
           </Grid>
 
           <Grid item xs={12} md={4}>
-            <FormControl fullWidth>
-              <InputLabel>Number of Results</InputLabel>
-              <Select
-                value={limit}
-                label="Number of Results"
-                onChange={(e) => setLimit(Number(e.target.value))}
-              >
-                <MenuItem value={3}>3</MenuItem>
-                <MenuItem value={5}>5</MenuItem>
-                <MenuItem value={10}>10</MenuItem>
-                <MenuItem value={20}>20</MenuItem>
-              </Select>
-            </FormControl>
+            <TextField
+              fullWidth
+              type="number"
+              label="Number of Results"
+              value={limit}
+              onChange={(e) => {
+                const inputValue = e.target.value;
+                // Allow empty input for better UX
+                if (inputValue === '') {
+                  setLimitError('');
+                  return;
+                }
+                
+                const numValue = Number(inputValue);
+                
+                // Check for NaN or invalid number
+                if (isNaN(numValue) || !isFinite(numValue)) {
+                  setLimitError('Please enter a valid number');
+                  return;
+                }
+                
+                // Validate range
+                if (numValue < 1 || numValue > 10) {
+                  setLimitError('Number of results must be between 1 and 10');
+                  setLimit(numValue); // Still set the value so user can see what they typed
+                } else {
+                  setLimitError('');
+                  setLimit(numValue);
+                }
+              }}
+              onBlur={(e) => {
+                const inputValue = e.target.value;
+                
+                // Handle empty input
+                if (inputValue === '') {
+                  setLimit(5); // Default to 5 if empty
+                  setLimitError('');
+                  return;
+                }
+                
+                const numValue = Number(inputValue);
+                
+                // Check for NaN or invalid number
+                if (isNaN(numValue) || !isFinite(numValue)) {
+                  setLimit(5); // Reset to default
+                  setLimitError('');
+                  return;
+                }
+                
+                // Auto-correct to valid range
+                if (numValue < 1) {
+                  setLimit(1);
+                  setLimitError('');
+                } else if (numValue > 10) {
+                  setLimit(10);
+                  setLimitError('');
+                } else {
+                  setLimit(numValue);
+                  setLimitError('');
+                }
+              }}
+              error={!!limitError}
+              helperText={limitError || 'Maximum 10 literature records allowed (1-10)'}
+              inputProps={{ 
+                min: 1, 
+                max: 10,
+                step: 1
+              }}
+            />
           </Grid>
 
           {/* Optional Filter Conditions */}
@@ -468,49 +533,153 @@ const DataInputPage: React.FC = () => {
           </Box>
 
           <Grid container spacing={2}>
-            {results.map((lit, idx) => (
-              <Grid item xs={12} key={lit.id || idx}>
-                <Card variant="outlined">
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
-                      <Box sx={{ flex: 1 }}>
-                        {lit.literature?.title ? (
-                          <Typography variant="h6" gutterBottom>
-                            {lit.literature.title}
-                          </Typography>
-                        ) : (
-                          <Typography variant="h6" gutterBottom>
-                            Literature Record #{lit.id}
-                          </Typography>
-                        )}
-                        {lit.literature?.authors && (
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
-                            <strong>Authors:</strong> {lit.literature.authors}
-                          </Typography>
-                        )}
-                        {lit.literature?.pub_year && (
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
-                            <strong>Year:</strong> {lit.literature.pub_year}
-                          </Typography>
-                        )}
-                        {lit.literature?.doi && (
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>DOI:</strong> {lit.literature.doi}
-                          </Typography>
-                        )}
-                        {!lit.literature && (
-                          <Typography variant="body2" color="text.secondary">
-                            <em>No literature metadata available</em>
-                          </Typography>
-                        )}
+            {results.map((lit, idx) => {
+              // Get literature metadata (support both top-level and nested structure)
+              const title = lit.title || lit.literature?.title;
+              const authors = lit.authors || lit.literature?.authors;
+              const pubYear = lit.pub_year || lit.literature?.pub_year;
+              const doi = lit.doi || lit.literature?.doi;
+              
+              return (
+                <Grid item xs={12} key={lit.id || idx}>
+                  <Card variant="outlined" sx={{ '&:hover': { boxShadow: 3 } }}>
+                    <CardContent>
+                      {/* Header Section with Title and Similarity */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
+                        <Box sx={{ flex: 1, pr: 2 }}>
+                          {title ? (
+                            <Typography 
+                              variant="h6" 
+                              gutterBottom
+                              sx={{ 
+                                fontWeight: 600,
+                                color: 'primary.main',
+                                lineHeight: 1.3,
+                                wordBreak: 'break-word',
+                                overflowWrap: 'break-word',
+                                hyphens: 'auto'
+                              }}
+                            >
+                              {title}
+                            </Typography>
+                          ) : (
+                            <Typography 
+                              variant="h6" 
+                              gutterBottom 
+                              color="text.secondary"
+                              sx={{
+                                wordBreak: 'break-word',
+                                overflowWrap: 'break-word'
+                              }}
+                            >
+                              Literature Record #{lit.id}
+                            </Typography>
+                          )}
+                        </Box>
+                        <Chip
+                          label={`Similarity: ${(lit.similarity_score * 100).toFixed(1)}%`}
+                          color="primary"
+                          size="small"
+                          sx={{ ml: 2, flexShrink: 0 }}
+                        />
                       </Box>
-                      <Chip
-                        label={`Similarity: ${(lit.similarity_score * 100).toFixed(1)}%`}
-                        color="primary"
-                        size="small"
-                        sx={{ ml: 2 }}
-                      />
-                    </Box>
+
+                      {/* Literature Metadata Section */}
+                      {(authors || pubYear || doi) && (
+                        <Box 
+                          sx={{ 
+                            mb: 2, 
+                            p: 1.5, 
+                            bgcolor: 'grey.50', 
+                            borderRadius: 1, 
+                            border: '1px solid', 
+                            borderColor: 'grey.200' 
+                          }}
+                        >
+                          <Grid container spacing={1.5}>
+                            {authors && (
+                              <Grid item xs={12} sm={pubYear || doi ? 6 : 12}>
+                                <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                                  <Typography 
+                                    variant="caption" 
+                                    sx={{ 
+                                      fontWeight: 'bold', 
+                                      color: 'text.secondary',
+                                      minWidth: '60px',
+                                      mr: 1
+                                    }}
+                                  >
+                                    Authors:
+                                  </Typography>
+                                  <Typography 
+                                    variant="body2" 
+                                    sx={{ 
+                                      color: 'text.primary',
+                                      wordBreak: 'break-word'
+                                    }}
+                                  >
+                                    {authors}
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                            )}
+                            {pubYear && (
+                              <Grid item xs={12} sm={authors && doi ? 3 : 6}>
+                                <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                                  <Typography 
+                                    variant="caption" 
+                                    sx={{ 
+                                      fontWeight: 'bold', 
+                                      color: 'text.secondary',
+                                      minWidth: '50px',
+                                      mr: 1
+                                    }}
+                                  >
+                                    Year:
+                                  </Typography>
+                                  <Typography variant="body2" color="text.primary">
+                                    {pubYear}
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                            )}
+                            {doi && (
+                              <Grid item xs={12} sm={authors && pubYear ? 3 : authors || pubYear ? 6 : 12}>
+                                <Box sx={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                                  <Typography 
+                                    variant="caption" 
+                                    sx={{ 
+                                      fontWeight: 'bold', 
+                                      color: 'text.secondary',
+                                      minWidth: '45px',
+                                      mr: 1
+                                    }}
+                                  >
+                                    DOI:
+                                  </Typography>
+                                  <Typography 
+                                    variant="body2" 
+                                    component="a"
+                                    href={doi.startsWith('http') ? doi : `https://doi.org/${doi}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    sx={{ 
+                                      color: 'primary.main',
+                                      textDecoration: 'none',
+                                      '&:hover': {
+                                        textDecoration: 'underline'
+                                      },
+                                      wordBreak: 'break-word'
+                                    }}
+                                  >
+                                    {doi}
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                            )}
+                          </Grid>
+                        </Box>
+                      )}
 
                     {lit.parameters && (
                       <Box sx={{ mt: 2 }}>
@@ -570,19 +739,11 @@ const DataInputPage: React.FC = () => {
                         </Typography>
                       </Box>
                     )}
-
-                    {lit.confidence !== undefined && (
-                      <Chip
-                        label={`Confidence: ${(lit.confidence * 100).toFixed(1)}%`}
-                        color="success"
-                        size="small"
-                        sx={{ mt: 2 }}
-                      />
-                    )}
                   </CardContent>
                 </Card>
               </Grid>
-            ))}
+              );
+            })}
           </Grid>
         </Paper>
       )}

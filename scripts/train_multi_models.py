@@ -360,8 +360,8 @@ def main():
     parser.add_argument(
         '--data',
         type=str,
-        default='literature_mining/storage/structured_store.jsonl',
-        help='JSONL数据文件路径'
+        default='literature_mining/storage/structured_store_final.jsonl',
+        help='JSONL数据文件路径（推荐使用增强版 structured_store_final.jsonl）'
     )
     parser.add_argument(
         '--output-dir',

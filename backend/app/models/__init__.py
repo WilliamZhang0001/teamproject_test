@@ -1,4 +1,4 @@
-"""数据库模型"""
+"""Database models"""
 from .user import AppUser
 from .auth import AuthLoginAudit
 from .literature import Literature, ExtractionRecord

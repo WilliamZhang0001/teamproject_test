@@ -203,19 +203,27 @@ class ModelPredictorAdapter:
         ("RandomForest", Path("models/by_experiment_type/stability_classifier.pkl")),
     )
 
-    def __init__(self, models_base: Optional[Path] = None) -> None:
+    def __init__(self, models_base: Optional[Path] = None, lazy_load: bool = True) -> None:
         self.repo_root = models_base or _resolve_repo_root()
         self.bundle: Optional[_ModelBundle] = None
-        self._load_first_available_model()
+        self._lazy_load = lazy_load
+        if not lazy_load:
+            self._load_first_available_model()
 
     # Public API -----------------------------------------------------------------
     @property
     def model_name(self) -> str:
+        # Lazy load model if not already loaded
+        if self.bundle is None:
+            self._load_first_available_model()
         if self.bundle is None:
             raise ModelNotAvailableError("No model bundle has been loaded")
         return self.bundle.model_name
 
     def predict(self, payload: Dict[str, Optional[float]]) -> Dict[str, any]:
+        # Lazy load model on first prediction
+        if self.bundle is None:
+            self._load_first_available_model()
         if self.bundle is None:
             raise ModelNotAvailableError("No model available for prediction")
 
@@ -255,7 +263,7 @@ class ModelPredictorAdapter:
             "model_used": self.bundle.model_name,
         }
 
-    # Internal helpers ------------------------------------------------------------
+    # Internal helpers 
     def _load_first_available_model(self) -> None:
         errors: List[str] = []
         repo_root = self.repo_root

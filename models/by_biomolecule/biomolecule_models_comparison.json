@@ -1,0 +1,29 @@
+{
+  "protein": {
+    "biomolecule_type": "protein",
+    "model_name": "LightGBM",
+    "n_samples": 11683,
+    "f1_score": 0.7130999090611592,
+    "accuracy": 0.7651288196524865,
+    "precision": 0.7600548754757961,
+    "recall": 0.7651288196524865
+  },
+  "polysaccharide": {
+    "biomolecule_type": "polysaccharide",
+    "model_name": "LightGBM",
+    "n_samples": 2805,
+    "f1_score": 0.7366062951182542,
+    "accuracy": 0.7786096256684492,
+    "precision": 0.7484141618154501,
+    "recall": 0.7786096256684492
+  },
+  "peptide": {
+    "biomolecule_type": "peptide",
+    "model_name": "LightGBM",
+    "n_samples": 2745,
+    "f1_score": 0.7001252615725658,
+    "accuracy": 0.7420765027322405,
+    "precision": 0.7140164244114844,
+    "recall": 0.7420765027322405
+  }
+}

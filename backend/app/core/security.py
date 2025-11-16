@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta,timezone
+from datetime import datetime, timedelta, timezone
 import jwt
 import bcrypt
 from backend.app.core.config import settings
@@ -17,15 +17,37 @@ def verify_password(raw: str, hashed: str) -> bool:
     return bcrypt.checkpw(password_bytes, hashed_bytes)
 
 def create_access_token(sub: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expire_minutes)
-    return jwt.encode({"sub": sub, "exp": expire}, settings.jwt_secret, algorithm="HS256")
+    """Create JWT access token
+    
+    If jwt_expire_minutes is None, token never expires (permanent until logout).
+    Otherwise, token expires after specified minutes.
+    """
+    payload = {"sub": sub}
+    
+    # Only add expiration if configured
+    if settings.jwt_expire_minutes is not None:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expire_minutes)
+        payload["exp"] = expire
+    
+    return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 
 def verify_token(token: str) -> dict:
-    """Verify JWT token and return payload"""
+    """Verify JWT token and return payload
+    
+    If token has no expiration (exp claim), it will never expire.
+    Only invalid tokens will raise exceptions.
+    """
     try:
-        payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
+        # Use options to not require expiration check
+        # If exp is present, it will be validated; if not, token is permanent
+        payload = jwt.decode(
+            token, 
+            settings.jwt_secret, 
+            algorithms=["HS256"],
+            options={"verify_exp": True}  # Verify exp only if present
+        )
         return payload
     except jwt.ExpiredSignatureError:
         raise Exception("Token has expired")
-    except jwt.JWTError:
-        raise Exception("Invalid token")
+    except jwt.InvalidTokenError as e:
+        raise Exception(f"Invalid token: {str(e)}")

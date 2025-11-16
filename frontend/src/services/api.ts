@@ -28,8 +28,22 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Don't automatically redirect on 401 to avoid loops
-    // Let individual components handle auth errors
+    // Handle 401 Unauthorized - token expired or invalid
+    if (error.response?.status === 401) {
+      const token = localStorage.getItem('token');
+      // Only clear token if it's not a mock token (for dev mode)
+      if (token && !token.startsWith('dev-mock-token-')) {
+        console.warn('Token expired or invalid, redirecting to login page');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        // Trigger a custom event to notify AuthContext
+        window.dispatchEvent(new Event('auth:logout'));
+        // Redirect to login page if not already there
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+          window.location.href = '/login';
+        }
+      }
+    }
     return Promise.reject(error);
   }
 );

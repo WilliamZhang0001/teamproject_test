@@ -3,18 +3,29 @@ Main FastAPI application for DoE-Assist backend
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from .routers import auth, users, literature, experiments
 from .api import jobs_router, predict_router
 from .core.db import init_db
 import uvicorn
+import asyncio
 
-# Initialize database
-init_db()
+# Import all models to ensure they're registered with SQLAlchemy Base
+from .models import AppUser, AuthLoginAudit, Literature, ExtractionRecord, UserExperimentRecord
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan handler - initialize database asynchronously"""
+    # Initialize database in background to avoid blocking startup
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, init_db)
+    yield
 
 app = FastAPI(
     title="DoE-Assist API",
     description="Intelligent Parameter Reduction for Experimental Design",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS middleware

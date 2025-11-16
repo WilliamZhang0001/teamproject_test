@@ -234,13 +234,13 @@ mysql -u root -p appdb < database/db/init/003_user_experiments.sql
 ## Data Features
 
 ### Current Features
-- ✅ User authentication and audit logging
-- ✅ Secure password hashing (bcrypt)
-- ✅ Literature metadata storage
-- ✅ Experimental parameter extraction
-- ✅ Similarity search support (weighted parameters)
-- ✅ User experiment history tracking
-- ✅ JSON storage for flexible data (prediction results, literature recommendations)
+- User authentication and audit logging
+- Secure password hashing (bcrypt)
+- Literature metadata storage
+- Experimental parameter extraction
+- Similarity search support (weighted parameters)
+- User experiment history tracking
+- JSON storage for flexible data (prediction results, literature recommendations)
 
 ### Indexes for Performance
 - User lookups: `username` (UNIQUE)
@@ -300,11 +300,39 @@ If you need to modify the schema:
 
 ## Security Considerations
 
-- ✅ Passwords are hashed using bcrypt
-- ✅ SQL injection protection via SQLAlchemy ORM
-- ✅ Database user has limited privileges (non-root)
-- ✅ Connection uses credentials (not root user)
-- ⚠️ **Change default passwords in production!**
+- Passwords are hashed using bcrypt
+- SQL injection protection via SQLAlchemy ORM
+- Database user has limited privileges (non-root)
+- Connection uses credentials (not root user)
+- **Change default passwords in production!**
+
+## Testing
+
+The database schema and models are tested through backend integration tests. Tests use an in-memory SQLite database to avoid requiring a running MySQL instance.
+
+### Running Database-Related Tests
+
+```bash
+# Run all tests (includes database tests)
+pytest
+
+# Run repository layer tests (database access)
+pytest tests/unit/test_user_repo.py
+pytest tests/unit/test_literature_repo.py
+pytest tests/unit/test_user_experiment_repo.py
+
+# Run integration tests (API endpoints with database)
+pytest tests/integration/
+```
+
+### Test Database Configuration
+
+- Tests use SQLite in-memory database (`:memory:`)
+- Each test gets a fresh database instance
+- Tables are created and dropped automatically
+- No manual database setup required for testing
+
+For more information about testing, see `tests/README.md`.
 
 ## License
 

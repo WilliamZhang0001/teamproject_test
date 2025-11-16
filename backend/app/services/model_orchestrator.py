@@ -28,6 +28,15 @@ from backend.app.services.iqr_repo import IqrRepository
 
 logger = logging.getLogger(__name__)
 
+# Optional literature service import
+try:
+    from backend.app.core.db import SessionLocal
+    from backend.app.services.literature_service import LiteratureService
+    LITERATURE_AVAILABLE = True
+except ImportError:
+    LITERATURE_AVAILABLE = False
+    logger.warning("Literature service not available")
+
 PREDICTION_LATENCY = Histogram(
     "ml_prediction_latency_seconds",
     "Latency of model predictions",
@@ -58,8 +67,9 @@ class ModelOrchestrator:
         predictor: Optional[ModelPredictorAdapter] = None,
         iqr_repo: Optional[IqrRepository] = None,
     ) -> None:
-        self.predictor = predictor or ModelPredictorAdapter()
-        self.iqr_repo = iqr_repo or IqrRepository()
+        # Use lazy loading by default to speed up startup
+        self.predictor = predictor or ModelPredictorAdapter(lazy_load=True)
+        self.iqr_repo = iqr_repo or IqrRepository(lazy_load=True)
 
     # ------------------------------------------------------------------
     def execute(self, payload: Dict) -> Dict:
@@ -103,6 +113,12 @@ class ModelOrchestrator:
             "model_used": model_name,
             "recommendation": recommendation,
         }
+        
+        # Add literature information if available
+        literature_info = self._get_literature_info(payload, result)
+        if literature_info:
+            response["literature"] = literature_info
+        
         logger.info(
             "Prediction completed",
             extra={
@@ -138,6 +154,25 @@ class ModelOrchestrator:
         for hit in hit_levels.values():
             IQR_HIT_LEVEL_COUNTER.labels(level=hit.level).inc()
 
+        # Add literature information if available
+        # Extract recommended values for similarity search
+        target_params = {}
+        for param_name, param_info in recommendations.items():
+            if param_info and isinstance(param_info, dict):
+                # Extract median value if available
+                if "median" in param_info:
+                    target_params[param_name] = param_info["median"]
+                elif "value" in param_info:
+                    target_params[param_name] = param_info["value"]
+        
+        literature_info = self._get_literature_info_for_recommendation(
+            biomolecule_name=biomolecule_name,
+            experiment_type=experiment_type,
+            target_params=target_params
+        )
+        if literature_info:
+            recommendations["literature"] = literature_info
+
         logger.info(
             "IQR recommendation completed",
             extra={
@@ -153,11 +188,89 @@ class ModelOrchestrator:
     def _build_recommendation(prediction: str, confidence: float) -> str:
         if prediction == "stable":
             if confidence >= 0.8:
-                return "该实验条件预计可行，建议进行实验验证"
-            return "实验条件可能可行，建议谨慎推进并关注验证结果"
+                return "Experimental conditions are expected to be feasible, recommend experimental validation"
+            return "Experimental conditions may be feasible, recommend proceeding cautiously and monitoring validation results"
         if confidence >= 0.8:
-            return "该实验条件预计不稳定，建议调整参数"
-        return "预测结果不稳定，置信度较低，建议优化参数或补充数据"
+            return "Experimental conditions are expected to be unstable, recommend adjusting parameters"
+        return "Prediction result is unstable with low confidence, recommend optimizing parameters or supplementing data"
+    
+    # ------------------------------------------------------------------
+    def _get_literature_info(self, payload: Dict, result: Dict) -> Optional[Dict]:
+        """Get literature information for prediction scenario"""
+        if not LITERATURE_AVAILABLE:
+            return None
+        
+        try:
+            db = SessionLocal()
+            try:
+                literature_service = LiteratureService(db)
+                
+                # Build ML result dict for literature search
+                ml_result = {
+                    "prediction": result.get("prediction"),
+                    "confidence": result.get("confidence"),
+                    "property_type": payload.get("property", "stability"),
+                    **{k: v for k, v in payload.items() 
+                       if k in ["pH", "temperature_c", "concentration_mg_ml", 
+                               "ionic_strength_mM", "additive", "time_min", 
+                               "shear_rate_s1", "pressure_bar"] and v is not None}
+                }
+                
+                # Get similar literature
+                similar_literature = literature_service.find_similar_literature(
+                    ml_result=ml_result,
+                    biomolecule_name=payload.get("biomolecule_name"),
+                    top_k=3
+                )
+                
+                if similar_literature:
+                    return {
+                        "top_similar_literature": similar_literature,
+                        "count": len(similar_literature)
+                    }
+                return None
+            finally:
+                db.close()
+        except Exception as e:
+            logger.warning(f"Failed to get literature information: {e}", exc_info=True)
+            return None
+    
+    # ------------------------------------------------------------------
+    def _get_literature_info_for_recommendation(
+        self,
+        biomolecule_name: Optional[str],
+        experiment_type: Optional[str],
+        target_params: Dict
+    ) -> Optional[Dict]:
+        """Get literature information for recommendation scenario"""
+        if not LITERATURE_AVAILABLE:
+            return None
+        
+        try:
+            db = SessionLocal()
+            try:
+                from backend.app.repos import literature_repo
+                
+                # Search similar records
+                similar_records = literature_repo.search_similar_records(
+                    db,
+                    target_params=target_params,
+                    biomolecule_name=biomolecule_name,
+                    property_type=experiment_type or "stability",
+                    limit=3
+                )
+                
+                if similar_records:
+                    return {
+                        "top_similar_literature": similar_records,
+                        "count": len(similar_records)
+                    }
+                return None
+            finally:
+                db.close()
+        except Exception as e:
+            logger.warning(f"Failed to get literature information for recommendation: {e}", exc_info=True)
+            return None
 
 
 __all__ = ["ModelOrchestrator", "ModelNotAvailableError"]

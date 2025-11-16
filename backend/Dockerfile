@@ -1,30 +1,30 @@
 FROM python:3.11-slim
 
 # Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Set work directory
 WORKDIR /app
 
-# Set PYTHONPATH to allow absolute imports
-ENV PYTHONPATH=/app
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies in single layer
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
+# Copy requirements first for better Docker layer caching
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -U pip && \
+RUN pip install --no-cache-dir -U pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy application code to match import paths
-COPY app ./backend/app
+COPY app .
 
 # Expose port
 EXPOSE 8000

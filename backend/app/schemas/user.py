@@ -2,10 +2,12 @@ from pydantic import BaseModel, EmailStr, ConfigDict
 from datetime import datetime
 from typing import Optional
 
+
 class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
+
 
 class UserOut(BaseModel):
     id: int
